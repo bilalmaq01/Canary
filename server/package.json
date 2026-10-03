@@ -7,8 +7,7 @@
   "dependencies": {
     "@deepgram/sdk": "^3",
     "@fastify/cors": "^8",
-    "@fastify/formbody": "^9.0.0",
-    "@fastify/static": "^6",
+"@fastify/static": "^6",
     "@fastify/websocket": "^8",
     "@google/generative-ai": "^0.21.0",
     "dotenv": "^16",
