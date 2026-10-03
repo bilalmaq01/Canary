@@ -42,7 +42,7 @@ export async function runReplay(
 
     // Keep server-side session in sync with engine state
     currentSession.score = result.score;
-    currentSession.categoriesAwarded = result.categoriesAwarded;
+    currentSession.categoriesAwarded = new Set(result.categoriesAwarded);
 
     // Publish score update
     publish(currentSession.id, {
