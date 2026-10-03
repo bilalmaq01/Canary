@@ -1,9 +1,11 @@
-import React from "react";
+import Dashboard from "./Dashboard";
+import ContactPage from "./ContactPage";
 
 export default function App() {
-  return (
-    <div className="p-8 text-2xl font-bold text-center">
-      ScamCallShield — Dashboard
-    </div>
-  );
+  const path = window.location.pathname;
+  if (path.startsWith("/c/")) {
+    const token = path.slice(3);
+    return <ContactPage token={token} />;
+  }
+  return <Dashboard />;
 }
