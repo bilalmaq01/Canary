@@ -40,6 +40,10 @@ export async function runReplay(
     // Run through engine
     const result = engine.processLine(text, true);
 
+    // Keep server-side session in sync with engine state
+    currentSession.score = result.score;
+    currentSession.categoriesAwarded = result.categoriesAwarded;
+
     // Publish score update
     publish(currentSession.id, {
       type: "score_update",

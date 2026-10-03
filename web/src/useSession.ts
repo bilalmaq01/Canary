@@ -29,8 +29,11 @@ export function useSession() {
   });
 
   const wsRef = useRef<WebSocket | null>(null);
+  const isStartingRef = useRef(false);
 
   const startSession = useCallback(async (fixture: string) => {
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
     const res = await fetch("/api/session", { method: "POST" });
     const { sessionId, contactUrl } = await res.json() as { sessionId: string; contactUrl: string };
 
@@ -63,6 +66,7 @@ export function useSession() {
   }, []);
 
   const reset = useCallback(() => {
+    isStartingRef.current = false;
     wsRef.current?.close();
     wsRef.current = null;
     setData({

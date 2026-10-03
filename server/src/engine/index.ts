@@ -146,16 +146,27 @@ function checkSecrecy(line: string): boolean {
 }
 
 function checkAuthority(line: string, previousLine: string | undefined): boolean {
-  if (
-    !containsAny(line, ["this is the", "this is"]) ||
-    !containsAny(line, ["office", "department", "division", "agency"])
-  ) {
-    return false;
-  }
   const demandWords = ["must", "need to", "have to", "required", "immediately", "today", "now"];
-  const hasDemandInLine = containsAny(line, demandWords);
-  const hasDemandInPrev = previousLine !== undefined && containsAny(previousLine.toLowerCase(), demandWords);
-  return hasDemandInLine || hasDemandInPrev;
+  const authorityOrgs = ["office", "department", "division", "agency"];
+  const authClaims = ["this is the", "this is"];
+
+  // Case 1: authority claim in this line + demand in this or previous line
+  if (containsAny(line, authClaims) && containsAny(line, authorityOrgs)) {
+    if (containsAny(line, demandWords)) return true;
+    if (previousLine !== undefined && containsAny(previousLine, demandWords)) return true;
+  }
+
+  // Case 2: authority claim in previous line + demand in this line
+  if (
+    previousLine !== undefined &&
+    containsAny(previousLine, authClaims) &&
+    containsAny(previousLine, authorityOrgs) &&
+    containsAny(line, demandWords)
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 function checkUrgency(line: string): boolean {
