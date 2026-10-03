@@ -16,13 +16,15 @@ const app = Fastify({ logger: true });
 await app.register(fastifyCors, { origin: true });
 await app.register(fastifyWebsocket);
 
-if (existsSync(webDist)) {
+const webDistExists = existsSync(webDist);
+
+if (webDistExists) {
   await app.register(fastifyStatic, {
     root: webDist,
     prefix: "/",
   });
 } else {
-  app.log.warn(`web/dist not found at ${webDist} — serving API only`);
+  app.log.warn(`web/dist not found at ${webDist}`);
 }
 
 if (existsSync(assetsDir)) {
@@ -37,9 +39,16 @@ await registerRoutes(app);
 
 app.get("/health", async () => ({ ok: true }));
 
-// SPA fallback — serve index.html for any unmatched GET (React handles routing)
+// SPA fallback — serve index.html for /c/:token and other client-side routes
 app.setNotFoundHandler(async (req, reply) => {
-  if (req.method === "GET" && !req.url.startsWith("/api") && !req.url.startsWith("/ws") && !req.url.startsWith("/assets")) {
+  if (
+    webDistExists &&
+    req.method === "GET" &&
+    !req.url.startsWith("/api") &&
+    !req.url.startsWith("/ws") &&
+    !req.url.startsWith("/twilio") &&
+    !req.url.startsWith("/assets")
+  ) {
     return reply.sendFile("index.html");
   }
   reply.code(404).send({ error: "Not found" });
