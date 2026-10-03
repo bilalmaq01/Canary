@@ -8,6 +8,7 @@ const {
   TWILIO_ACCOUNT_SID,
   TWILIO_AUTH_TOKEN,
   TWILIO_PHONE_NUMBER,
+  PROTECTED_PHONE_NUMBER,
   BASE_URL,
 } = process.env;
 
@@ -43,12 +44,12 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
     reply.header("Content-Type", "text/xml").send(twiml);
 
     // Dial the protected user into the conference (no stream)
-    if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE_NUMBER) {
+    if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE_NUMBER && PROTECTED_PHONE_NUMBER) {
       const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
       try {
         await client.calls.create({
-          to: TWILIO_PHONE_NUMBER,
-          from: callerNumber || TWILIO_PHONE_NUMBER,
+          to: PROTECTED_PHONE_NUMBER,
+          from: TWILIO_PHONE_NUMBER,
           twiml: `<Response><Dial><Conference>${"conf-" + session.id}</Conference></Dial></Response>`,
         });
       } catch (e) {
