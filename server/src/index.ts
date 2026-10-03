@@ -33,7 +33,7 @@ if (webDistExists) {
 if (existsSync(assetsDir)) {
   await app.register(fastifyStatic, {
     root: assetsDir,
-    prefix: "/assets/",
+    prefix: "/audio/",
     decorateReply: false,
   });
 }
@@ -50,7 +50,7 @@ app.setNotFoundHandler(async (req, reply) => {
     !req.url.startsWith("/api") &&
     !req.url.startsWith("/ws") &&
     !req.url.startsWith("/twilio") &&
-    !req.url.startsWith("/assets")
+    !req.url.startsWith("/audio")
   ) {
     return reply.sendFile("index.html");
   }

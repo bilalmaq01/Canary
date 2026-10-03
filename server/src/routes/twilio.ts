@@ -78,7 +78,7 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
         });
         if (!conferences.length) return "failed";
         await client.conferences(conferences[0].sid).update({
-          announceUrl: `${BASE_URL}/assets/${clipId}.mp3`,
+          announceUrl: `${BASE_URL}/audio/${clipId}.mp3`,
           announceMethod: "GET",
         });
         return "played";

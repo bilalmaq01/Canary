@@ -82,7 +82,7 @@ export function useSession() {
   useEffect(() => {
     if (!data.lastClipResult || data.lastClipResult.result !== "played") return;
     const clipId = data.lastClipResult.clipId;
-    const audio = new Audio(`/assets/${clipId}.mp3`);
+    const audio = new Audio(`/audio/${clipId}.mp3`);
     audio.play().catch(() => {});
   }, [data.lastClipResult]);
 
