@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm install && npm run build --workspace=web && npm run build --workspace=server"
+
+[deploy]
+startCommand = "node server/dist/index.js"
+restartPolicyType = "on_failure"
