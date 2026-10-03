@@ -12,39 +12,36 @@ export interface SessionData {
   contactRecommendation: "end" | "review" | null;
   lastClipResult: { clipId: ClipId; result: "played" | "failed" } | null;
   wsConnected: boolean;
+  sessionType: "replay" | "live" | null;
 }
 
-export function useSession() {
-  const [data, setData] = useState<SessionData>({
-    sessionId: null,
-    contactUrl: null,
-    state: "monitoring",
-    score: 0,
-    categoriesAwarded: [],
-    transcript: [],
-    evidence: null,
-    contactRecommendation: null,
-    lastClipResult: null,
-    wsConnected: false,
-  });
+const INITIAL_DATA: SessionData = {
+  sessionId: null,
+  contactUrl: null,
+  state: "monitoring",
+  score: 0,
+  categoriesAwarded: [],
+  transcript: [],
+  evidence: null,
+  contactRecommendation: null,
+  lastClipResult: null,
+  wsConnected: false,
+  sessionType: null,
+};
 
+export function useSession() {
+  const [data, setData] = useState<SessionData>(INITIAL_DATA);
   const [scoreFlash, setScoreFlash] = useState(false);
   const scoreFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const wsRef = useRef<WebSocket | null>(null);
   const isStartingRef = useRef(false);
 
-  const startSession = useCallback(async (fixture: string) => {
-    if (isStartingRef.current) return;
-    isStartingRef.current = true;
-    const res = await fetch("/api/session", { method: "POST" });
-    const { sessionId, contactUrl } = await res.json() as { sessionId: string; contactUrl: string };
-
+  const connectWs = useCallback((sessionId: string, contactUrl: string, type: "replay" | "live") => {
     const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${wsProto}//${window.location.host}/ws/${sessionId}`);
     wsRef.current = ws;
 
-    ws.onopen = () => setData((d) => ({ ...d, sessionId, contactUrl, wsConnected: true }));
+    ws.onopen = () => setData((d) => ({ ...d, sessionId, contactUrl, wsConnected: true, sessionType: type }));
     ws.onclose = () => setData((d) => ({ ...d, wsConnected: false }));
 
     ws.onmessage = (e) => {
@@ -52,9 +49,7 @@ export function useSession() {
       setData((d) => {
         const next = handleEvent(d, event);
         if (event.type === "score_update" && next.score > d.score) {
-          if (scoreFlashTimerRef.current !== null) {
-            clearTimeout(scoreFlashTimerRef.current);
-          }
+          if (scoreFlashTimerRef.current !== null) clearTimeout(scoreFlashTimerRef.current);
           setScoreFlash(true);
           scoreFlashTimerRef.current = setTimeout(() => {
             setScoreFlash(false);
@@ -65,12 +60,21 @@ export function useSession() {
       });
     };
 
+    return ws;
+  }, []);
+
+  const startSession = useCallback(async (fixture: string) => {
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
+
+    const res = await fetch("/api/session", { method: "POST" });
+    const { sessionId, contactUrl } = await res.json() as { sessionId: string; contactUrl: string };
+
+    const ws = connectWs(sessionId, contactUrl, "replay");
+
     await new Promise<void>((resolve) => {
       const check = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          clearInterval(check);
-          resolve();
-        }
+        if (ws.readyState === WebSocket.OPEN) { clearInterval(check); resolve(); }
       }, 50);
     });
 
@@ -79,38 +83,43 @@ export function useSession() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fixture }),
     });
-  }, []);
+  }, [connectWs]);
 
   const reset = useCallback(() => {
     isStartingRef.current = false;
     wsRef.current?.close();
     wsRef.current = null;
-    setData({
-      sessionId: null,
-      contactUrl: null,
-      state: "monitoring",
-      score: 0,
-      categoriesAwarded: [],
-      transcript: [],
-      evidence: null,
-      contactRecommendation: null,
-      lastClipResult: null,
-      wsConnected: false,
-    });
+    setData(INITIAL_DATA);
   }, []);
+
+  // Poll for incoming live calls when idle
+  useEffect(() => {
+    if (data.sessionId !== null) return;
+
+    const poll = async () => {
+      if (isStartingRef.current) return;
+      try {
+        const res = await fetch("/api/session/active");
+        const { session } = await res.json() as { session: { sessionId: string; contactUrl: string } | null };
+        if (!session) return;
+        isStartingRef.current = true;
+        connectWs(session.sessionId, session.contactUrl, "live");
+      } catch {}
+    };
+
+    const id = setInterval(() => { void poll(); }, 2000);
+    return () => clearInterval(id);
+  }, [data.sessionId, connectWs]);
 
   useEffect(() => {
     if (!data.lastClipResult || data.lastClipResult.result !== "played") return;
-    const clipId = data.lastClipResult.clipId;
-    const audio = new Audio(`/audio/${clipId}.mp3`);
+    const audio = new Audio(`/audio/${data.lastClipResult.clipId}.mp3`);
     audio.play().catch(() => {});
   }, [data.lastClipResult]);
 
   useEffect(() => {
     return () => {
-      if (scoreFlashTimerRef.current !== null) {
-        clearTimeout(scoreFlashTimerRef.current);
-      }
+      if (scoreFlashTimerRef.current !== null) clearTimeout(scoreFlashTimerRef.current);
     };
   }, []);
 

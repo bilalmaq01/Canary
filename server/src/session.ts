@@ -31,6 +31,18 @@ export function getSessionByToken(token: string): Session | undefined {
   return id ? sessions.get(id) : undefined;
 }
 
+export function getLatestActiveSession(): Session | undefined {
+  let latest: Session | undefined;
+  for (const session of sessions.values()) {
+    if (session.state !== "ended") {
+      if (!latest || session.startedAt > latest.startedAt) {
+        latest = session;
+      }
+    }
+  }
+  return latest;
+}
+
 export function endSession(id: string): void {
   const session = sessions.get(id);
   if (session) {

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { SocketStream } from "@fastify/websocket";
-import { createSession, getSession, getSessionByToken } from "../session.js";
+import { createSession, getSession, getSessionByToken, getLatestActiveSession } from "../session.js";
 import { subscribe, publish } from "../bus.js";
 import { runReplay } from "../replay.js";
 import { intervene } from "../intervention.js";
@@ -17,6 +17,19 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       sessionId: session.id,
       contactToken: session.contactToken,
       contactUrl,
+    });
+  });
+
+  // GET /api/session/active — returns the most recent non-ended session (for live call auto-connect)
+  app.get("/api/session/active", async (_req, reply) => {
+    const session = getLatestActiveSession();
+    if (!session) return reply.send({ session: null });
+    const baseUrl = process.env.BASE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
+    return reply.send({
+      session: {
+        sessionId: session.id,
+        contactUrl: `${baseUrl}/c/${session.contactToken}`,
+      },
     });
   });
 
@@ -116,15 +129,19 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
     subscribe(sessionId, conn);
 
-    // Send current state snapshot on connect
+    // Send full state snapshot so late-joining clients (live call auto-connect) catch up
     conn.socket.send(JSON.stringify({ type: "state_change", state: session.state }));
-    conn.socket.send(
-      JSON.stringify({
-        type: "score_update",
-        score: session.score,
-        categoriesAwarded: Array.from(session.categoriesAwarded),
-      })
-    );
+    conn.socket.send(JSON.stringify({
+      type: "score_update",
+      score: session.score,
+      categoriesAwarded: Array.from(session.categoriesAwarded),
+    }));
+    for (const line of session.transcript) {
+      conn.socket.send(JSON.stringify({ type: "transcript", line }));
+    }
+    if (session.evidence) {
+      conn.socket.send(JSON.stringify({ type: "intervention", evidence: session.evidence }));
+    }
   });
 
   await registerTwilioRoutes(app);

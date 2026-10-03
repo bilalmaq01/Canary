@@ -98,7 +98,12 @@ export default function Dashboard() {
             <div className="bg-gray-900 rounded-xl p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-gray-100">Caller Transcript</h2>
-                {sessionActive && (
+                {sessionActive && data.sessionType === "live" && (
+                  <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full animate-pulse">
+                    Live call
+                  </span>
+                )}
+                {sessionActive && data.sessionType === "replay" && (
                   <span className="text-xs bg-amber-600 text-white px-2 py-0.5 rounded-full">
                     Scripted simulation
                   </span>
@@ -106,7 +111,9 @@ export default function Dashboard() {
               </div>
               <div className="h-64 overflow-y-auto flex flex-col gap-1">
                 {data.transcript.length === 0 ? (
-                  <p className="text-gray-500 italic text-sm">Waiting for call...</p>
+                  <p className="text-gray-500 italic text-sm">
+                    {sessionActive ? "Call connected — waiting for speech..." : "Watching for incoming call..."}
+                  </p>
                 ) : (
                   data.transcript.map((line, i) => {
                     const isLastFinal =
