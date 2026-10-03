@@ -109,26 +109,30 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
-              <div className="h-64 overflow-y-auto flex flex-col gap-1">
+              <div className="h-64 flex flex-col justify-end gap-2 overflow-hidden">
                 {data.transcript.length === 0 ? (
                   <p className="text-gray-500 italic text-sm">
                     {sessionActive ? "Call connected — waiting for speech..." : "Watching for incoming call..."}
                   </p>
-                ) : (
-                  data.transcript.map((line, i) => {
-                    const isLastFinal =
-                      line.isFinal && i === data.transcript.length - 1;
-                    return (
-                      <p
-                        key={i}
-                        className={`text-sm ${line.isFinal ? "text-white" : "text-gray-500"} ${isLastFinal ? "font-medium" : ""}`}
-                      >
-                        {line.text}
-                      </p>
-                    );
-                  })
-                )}
-                <div ref={bottomRef} />
+                ) : (() => {
+                  const finals = data.transcript.filter((l) => l.isFinal);
+                  const interim = data.transcript.filter((l) => !l.isFinal).at(-1);
+                  const lastFinal = finals.at(-1);
+                  return (
+                    <>
+                      {lastFinal && (
+                        <p className="text-sm text-white font-medium leading-relaxed">
+                          {lastFinal.text}
+                        </p>
+                      )}
+                      {interim && (
+                        <p className="text-sm text-gray-400 leading-relaxed">
+                          {interim.text}
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
