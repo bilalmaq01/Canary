@@ -48,9 +48,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
     const { fixture } = req.body as { fixture: string };
 
-    // playClip for replay: just publish a clip_result event and resolve immediately
-    const playClip = async (clipId: ClipId): Promise<"played" | "failed"> => {
-      publish(sessionId, { type: "clip_result", clipId, result: "played" });
+    // playClip for replay: intervention.ts publishes clip_result after this returns
+    const playClip = async (_clipId: ClipId): Promise<"played" | "failed"> => {
       return "played";
     };
 

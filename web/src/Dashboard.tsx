@@ -206,6 +206,12 @@ export default function Dashboard() {
               </div>
             )}
 
+            {data.state === "ended" && data.evidence === null && (
+              <div className="bg-green-900 border border-green-600 rounded-xl p-4 text-sm text-green-300 font-medium text-center">
+                No suspicious request detected so far.
+              </div>
+            )}
+
             {data.lastClipResult !== null && data.lastClipResult.result === "failed" && (
               <div className="bg-orange-900 border border-orange-500 rounded-xl p-3 text-sm text-orange-300">
                 Warning audio failed to play
