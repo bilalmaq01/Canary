@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && npm run build --workspace=web && npm run build --workspace=server"
+buildCommand = "npm install && npm -w web run build && npm -w server run build"
 
 [deploy]
 startCommand = "node server/dist/index.js"
