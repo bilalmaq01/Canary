@@ -3,6 +3,14 @@ import { QRCodeSVG } from "qrcode.react";
 import { useSession } from "./useSession";
 import type { SessionState, Category } from "./types";
 
+const CATEGORY_ICONS: Record<string, string> = {
+  payment: "💳",
+  access: "🔐",
+  secrecy: "🤫",
+  authority: "🏛",
+  urgency: "⚡",
+};
+
 function statePillClass(state: SessionState): string {
   switch (state) {
     case "monitoring":
@@ -57,21 +65,24 @@ function categoryLabel(cat: Category): string {
 }
 
 export default function Dashboard() {
-  const { data, startSession, reset } = useSession();
+  const { data, scoreFlash, startSession, reset } = useSession();
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const prevCatLengthRef = useRef<number>(0);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [data.transcript]);
 
   const sessionActive = data.sessionId !== null;
+  const prevCatLength = prevCatLengthRef.current;
+  prevCatLengthRef.current = data.categoriesAwarded.length;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
       <header className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
         <div className="flex flex-col leading-tight">
-          <span className="text-lg font-bold tracking-tight">Canary AI</span>
-          <span className="text-xs text-gray-400 tracking-wide">the canary in your phone line</span>
+          <span className="text-lg font-bold tracking-tight">🐦 Canary AI</span>
+          <span className="text-xs text-yellow-500/70 tracking-wide">the canary in your phone line</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span
@@ -97,14 +108,18 @@ export default function Dashboard() {
                 {data.transcript.length === 0 ? (
                   <p className="text-gray-500 italic text-sm">Waiting for call...</p>
                 ) : (
-                  data.transcript.map((line, i) => (
-                    <p
-                      key={i}
-                      className={`text-sm ${line.isFinal ? "text-white" : "text-gray-500"}`}
-                    >
-                      {line.text}
-                    </p>
-                  ))
+                  data.transcript.map((line, i) => {
+                    const isLastFinal =
+                      line.isFinal && i === data.transcript.length - 1;
+                    return (
+                      <p
+                        key={i}
+                        className={`text-sm ${line.isFinal ? "text-white" : "text-gray-500"} ${isLastFinal ? "font-medium" : ""}`}
+                      >
+                        {line.text}
+                      </p>
+                    );
+                  })
                 )}
                 <div ref={bottomRef} />
               </div>
@@ -146,23 +161,33 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold">{data.score}</span>
+                <span
+                  className={`text-3xl font-bold transition-all duration-300 ${
+                    scoreFlash
+                      ? "ring-2 ring-yellow-400 ring-offset-2 ring-offset-gray-900 rounded-lg px-2"
+                      : ""
+                  }`}
+                >
+                  {data.score}
+                </span>
                 <span className="text-gray-400 text-sm">pts</span>
               </div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-gray-700 rounded-full h-3">
                 <div
-                  className={`h-2 rounded-full transition-all duration-500 ${scoreBarColor(data.score)}`}
+                  className={`h-3 rounded-full transition-all duration-500 ${scoreBarColor(data.score)}`}
                   style={{ width: `${Math.min(data.score, 100)}%` }}
                 />
               </div>
               {data.categoriesAwarded.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {data.categoriesAwarded.map((cat) => (
+                  {data.categoriesAwarded.map((cat, i) => (
                     <span
                       key={cat}
-                      className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full"
+                      className={`text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full transition-all duration-300 ${
+                        i >= prevCatLength ? "animate-bounce" : ""
+                      }`}
                     >
-                      {categoryLabel(cat)}
+                      {CATEGORY_ICONS[cat] ?? ""} {categoryLabel(cat)}
                     </span>
                   ))}
                 </div>
@@ -176,7 +201,7 @@ export default function Dashboard() {
                     ? "High-risk phrase detected"
                     : "Score threshold reached"}
                 </p>
-                <p className="text-sm italic text-gray-200">"{data.evidence.quotedLine}"</p>
+                <p className="text-base italic text-gray-200 border-l-4 border-red-500 pl-3">"{data.evidence.quotedLine}"</p>
                 {data.evidence.category != null && (
                   <span className="text-xs bg-red-800 text-red-200 px-2 py-0.5 rounded-full self-start">
                     {categoryLabel(data.evidence.category)}

@@ -28,6 +28,9 @@ export function useSession() {
     wsConnected: false,
   });
 
+  const [scoreFlash, setScoreFlash] = useState(false);
+  const scoreFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
   const isStartingRef = useRef(false);
 
@@ -46,7 +49,20 @@ export function useSession() {
 
     ws.onmessage = (e) => {
       const event: ServerEvent = JSON.parse(e.data as string) as ServerEvent;
-      setData((d) => handleEvent(d, event));
+      setData((d) => {
+        const next = handleEvent(d, event);
+        if (event.type === "score_update" && next.score > d.score) {
+          if (scoreFlashTimerRef.current !== null) {
+            clearTimeout(scoreFlashTimerRef.current);
+          }
+          setScoreFlash(true);
+          scoreFlashTimerRef.current = setTimeout(() => {
+            setScoreFlash(false);
+            scoreFlashTimerRef.current = null;
+          }, 600);
+        }
+        return next;
+      });
     };
 
     await new Promise<void>((resolve) => {
@@ -90,7 +106,15 @@ export function useSession() {
     audio.play().catch(() => {});
   }, [data.lastClipResult]);
 
-  return { data, startSession, reset };
+  useEffect(() => {
+    return () => {
+      if (scoreFlashTimerRef.current !== null) {
+        clearTimeout(scoreFlashTimerRef.current);
+      }
+    };
+  }, []);
+
+  return { data, scoreFlash, startSession, reset };
 }
 
 function handleEvent(d: SessionData, event: ServerEvent): SessionData {

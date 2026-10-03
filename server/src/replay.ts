@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { createEngine } from "./engine/index.js";
+import { classifyLine } from "./engine/gemini.js";
 import { intervene } from "./intervention.js";
 import { publish } from "./bus.js";
 import { getSession } from "./session.js";
@@ -55,6 +56,40 @@ export async function runReplay(
     if (result.triggered && result.triggerPath && result.clipId && result.evidence) {
       await intervene(currentSession, result.clipId, result.triggerPath, result.evidence, playClip);
     }
+
+    // Fire Gemini paraphrase detection in parallel (non-blocking)
+    void (async () => {
+      try {
+        const geminiResult = await classifyLine(text);
+        if (!geminiResult || geminiResult.confidence < 0.85) return;
+
+        const sess = getSession(session.id);
+        if (!sess || sess.state === "ended") return;
+
+        const geminiEngineResult = engine.addGeminiEvidence(geminiResult.category);
+
+        sess.score = geminiEngineResult.score;
+        sess.categoriesAwarded = new Set(geminiEngineResult.categoriesAwarded);
+
+        publish(sess.id, {
+          type: "score_update",
+          score: geminiEngineResult.score,
+          categoriesAwarded: geminiEngineResult.categoriesAwarded,
+        });
+
+        if (
+          geminiEngineResult.triggered &&
+          geminiEngineResult.triggerPath &&
+          geminiEngineResult.clipId &&
+          geminiEngineResult.evidence &&
+          !sess.intervened
+        ) {
+          await intervene(sess, geminiEngineResult.clipId, geminiEngineResult.triggerPath, geminiEngineResult.evidence, playClip);
+        }
+      } catch {
+        // Gemini errors must never break the replay loop
+      }
+    })();
 
     await sleep(1500);
   }

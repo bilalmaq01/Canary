@@ -11,6 +11,7 @@ export interface EngineResult {
 
 export interface Engine {
   processLine(text: string, isFinal: boolean): EngineResult;
+  addGeminiEvidence(category: Category): EngineResult;
   getState(): EngineResult;
   reset(): void;
 }
@@ -286,6 +287,33 @@ export function createEngine(): Engine {
     return buildResult();
   }
 
+  function addGeminiEvidence(category: Category): EngineResult {
+    // If already awarded, nothing to do
+    if (categoriesAwarded.has(category)) return buildResult();
+
+    categoriesAwarded.add(category);
+    score += CATEGORY_POINTS[category];
+
+    // Fire score-path trigger if threshold met and not yet intervened
+    if (!intervened && score >= 70 && categoriesAwarded.size >= 3) {
+      intervened = true;
+      lastResult = {
+        score,
+        categoriesAwarded: Array.from(categoriesAwarded),
+        triggered: true,
+        triggerPath: "score",
+        clipId: "warning-score",
+        evidence: {
+          triggerPath: "score",
+          quotedLine: "(Gemini paraphrase detection)",
+        },
+      };
+      return snapshot();
+    }
+
+    return buildResult();
+  }
+
   function getState(): EngineResult {
     return snapshot();
   }
@@ -302,5 +330,5 @@ export function createEngine(): Engine {
     };
   }
 
-  return { processLine, getState, reset };
+  return { processLine, addGeminiEvidence, getState, reset };
 }

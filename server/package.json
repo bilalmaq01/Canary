@@ -13,7 +13,8 @@
     "qrcode": "^1.5",
     "nanoid": "^3",
     "twilio": "^4",
-    "@deepgram/sdk": "^3"
+    "@deepgram/sdk": "^3",
+    "@google/generative-ai": "^0.21.0"
   },
   "devDependencies": {
     "typescript": "^5",
