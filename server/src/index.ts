@@ -3,6 +3,7 @@ import Fastify from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import fastifyStatic from "@fastify/static";
 import fastifyCors from "@fastify/cors";
+import fastifyFormbody from "@fastify/formbody";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { existsSync } from "fs";
@@ -17,6 +18,7 @@ const assetsDir = join(projectRoot, "audio");
 const app = Fastify({ logger: true });
 
 await app.register(fastifyCors, { origin: true });
+await app.register(fastifyFormbody);
 await app.register(fastifyWebsocket);
 
 const webDistExists = existsSync(webDist);
