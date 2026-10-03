@@ -2,6 +2,9 @@
 builder = "nixpacks"
 buildCommand = "npm install && npm -w web run build && npm -w server run build"
 
+[build.variables]
+NIXPACKS_NODE_VERSION = "20"
+
 [deploy]
 startCommand = "node server/dist/index.js"
 healthcheckPath = "/health"

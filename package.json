@@ -2,6 +2,9 @@
   "name": "scam-call-shield",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "workspaces": ["server", "web"],
   "scripts": {
     "start": "node server/dist/index.js",
