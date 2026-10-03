@@ -4,4 +4,6 @@ buildCommand = "npm install && npm -w web run build && npm -w server run build"
 
 [deploy]
 startCommand = "node server/dist/index.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
 restartPolicyType = "on_failure"
