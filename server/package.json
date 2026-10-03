@@ -11,7 +11,9 @@
     "@fastify/cors": "^8",
     "dotenv": "^16",
     "qrcode": "^1.5",
-    "nanoid": "^3"
+    "nanoid": "^3",
+    "twilio": "^4",
+    "@deepgram/sdk": "^3"
   },
   "devDependencies": {
     "typescript": "^5",

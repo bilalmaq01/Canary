@@ -5,6 +5,7 @@ import { subscribe, publish } from "../bus.js";
 import { runReplay } from "../replay.js";
 import { intervene } from "../intervention.js";
 import type { ClipId, Evidence } from "../events.js";
+import { registerTwilioRoutes } from "./twilio.js";
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // POST /api/session — create a new session
@@ -126,4 +127,6 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       })
     );
   });
+
+  await registerTwilioRoutes(app);
 }
