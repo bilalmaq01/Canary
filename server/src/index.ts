@@ -14,12 +14,12 @@ const app = Fastify({ logger: true });
 await app.register(fastifyCors, { origin: true });
 await app.register(fastifyWebsocket);
 await app.register(fastifyStatic, {
-  root: join(__dirname, "../../../web/dist"),
+  root: join(__dirname, "../../web/dist"),
   prefix: "/",
 });
 
 await app.register(fastifyStatic, {
-  root: join(__dirname, "../../../assets"),
+  root: join(__dirname, "../../assets"),
   prefix: "/assets/",
   decorateReply: false,
 });
