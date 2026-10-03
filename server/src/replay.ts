@@ -68,20 +68,18 @@ export async function runReplay(
         if (!sess || sess.state === "ended") return;
 
         // Add any new categories Gemini detected to the score
-        let scoreChanged = false;
         for (const cat of analysis.categories) {
           const r = engine.addGeminiEvidence(cat);
           sess.score = r.score;
           sess.categoriesAwarded = new Set(r.categoriesAwarded);
-          scoreChanged = true;
         }
-        if (scoreChanged) {
-          publish(sess.id, {
-            type: "score_update",
-            score: sess.score,
-            categoriesAwarded: Array.from(sess.categoriesAwarded),
-          });
-        }
+
+        // Always sync the dashboard before intervention so score/chips are current
+        publish(sess.id, {
+          type: "score_update",
+          score: sess.score,
+          categoriesAwarded: Array.from(sess.categoriesAwarded),
+        });
 
         // Gemini makes the call: high confidence → intervene immediately
         if (analysis.isScam && analysis.confidence >= 0.75 && !sess.intervened) {

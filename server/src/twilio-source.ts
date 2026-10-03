@@ -90,20 +90,18 @@ export function handleTwilioStream(
         const sess = getSession(session.id);
         if (!sess || sess.state === "ended") return;
 
-        let scoreChanged = false;
         for (const cat of analysis.categories) {
           const r = engine.addGeminiEvidence(cat);
           sess.score = r.score;
           sess.categoriesAwarded = new Set(r.categoriesAwarded);
-          scoreChanged = true;
         }
-        if (scoreChanged) {
-          publish(sess.id, {
-            type: "score_update",
-            score: sess.score,
-            categoriesAwarded: Array.from(sess.categoriesAwarded),
-          });
-        }
+
+        // Always sync the dashboard before intervention so score/chips are current
+        publish(sess.id, {
+          type: "score_update",
+          score: sess.score,
+          categoriesAwarded: Array.from(sess.categoriesAwarded),
+        });
 
         if (analysis.isScam && analysis.confidence >= 0.75 && !sess.intervened) {
           const clipId = analysis.severity === "high" || analysis.categories.includes("payment")
