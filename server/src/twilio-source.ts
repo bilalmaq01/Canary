@@ -1,6 +1,6 @@
 import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { createEngine } from "./engine/index.js";
-import { classifyLine } from "./engine/gemini.js";
+import { analyzeConversation } from "./engine/gemini.js";
 import { intervene } from "./intervention.js";
 import { publish } from "./bus.js";
 import { getSession } from "./session.js";
@@ -68,6 +68,8 @@ export function handleTwilioStream(
     if (!isFinal) return;
 
     const result = engine.processLine(text, true);
+    currentSession.score = result.score;
+    currentSession.categoriesAwarded = new Set(result.categoriesAwarded);
     publish(session.id, {
       type: "score_update",
       score: result.score,
@@ -78,34 +80,39 @@ export function handleTwilioStream(
       void intervene(currentSession, result.clipId, result.triggerPath, result.evidence, playClip);
     }
 
-    // Fire Gemini paraphrase detection in parallel (non-blocking)
+    // Gemini analyzes full conversation context (non-blocking, primary decision-maker)
+    const recentLines = currentSession.transcript.slice(-6).map((l) => l.text);
     void (async () => {
       try {
-        const geminiResult = await classifyLine(text);
-        if (!geminiResult || geminiResult.confidence < 0.85) return;
+        const analysis = await analyzeConversation(recentLines);
+        if (!analysis) return;
 
         const sess = getSession(session.id);
         if (!sess || sess.state === "ended") return;
 
-        const geminiEngineResult = engine.addGeminiEvidence(geminiResult.category);
+        let scoreChanged = false;
+        for (const cat of analysis.categories) {
+          const r = engine.addGeminiEvidence(cat);
+          sess.score = r.score;
+          sess.categoriesAwarded = new Set(r.categoriesAwarded);
+          scoreChanged = true;
+        }
+        if (scoreChanged) {
+          publish(sess.id, {
+            type: "score_update",
+            score: sess.score,
+            categoriesAwarded: Array.from(sess.categoriesAwarded),
+          });
+        }
 
-        sess.score = geminiEngineResult.score;
-        sess.categoriesAwarded = new Set(geminiEngineResult.categoriesAwarded);
-
-        publish(sess.id, {
-          type: "score_update",
-          score: geminiEngineResult.score,
-          categoriesAwarded: geminiEngineResult.categoriesAwarded,
-        });
-
-        if (
-          geminiEngineResult.triggered &&
-          geminiEngineResult.triggerPath &&
-          geminiEngineResult.clipId &&
-          geminiEngineResult.evidence &&
-          !sess.intervened
-        ) {
-          void intervene(sess, geminiEngineResult.clipId, geminiEngineResult.triggerPath, geminiEngineResult.evidence, playClip);
+        if (analysis.isScam && analysis.confidence >= 0.75 && !sess.intervened) {
+          const clipId = analysis.severity === "high" || analysis.categories.includes("payment")
+            ? "warning-gift-card"
+            : "warning-score";
+          void intervene(sess, clipId, "score", {
+            triggerPath: "score",
+            quotedLine: analysis.reason || "Scam pattern detected",
+          }, playClip);
         }
       } catch {
         // Gemini errors must never break the Twilio stream handler
