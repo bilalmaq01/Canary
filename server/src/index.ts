@@ -3,26 +3,35 @@ import Fastify from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import fastifyStatic from "@fastify/static";
 import fastifyCors from "@fastify/cors";
-import { fileURLToPath } from "url";
-import { join, dirname } from "path";
+import { join } from "path";
+import { existsSync } from "fs";
 import { registerRoutes } from "./routes/index.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = process.cwd();
+const webDist = join(root, "web/dist");
+const assetsDir = join(root, "assets");
 
 const app = Fastify({ logger: true });
 
 await app.register(fastifyCors, { origin: true });
 await app.register(fastifyWebsocket);
-await app.register(fastifyStatic, {
-  root: join(__dirname, "../../web/dist"),
-  prefix: "/",
-});
 
-await app.register(fastifyStatic, {
-  root: join(__dirname, "../../assets"),
-  prefix: "/assets/",
-  decorateReply: false,
-});
+if (existsSync(webDist)) {
+  await app.register(fastifyStatic, {
+    root: webDist,
+    prefix: "/",
+  });
+} else {
+  app.log.warn(`web/dist not found at ${webDist} — serving API only`);
+}
+
+if (existsSync(assetsDir)) {
+  await app.register(fastifyStatic, {
+    root: assetsDir,
+    prefix: "/assets/",
+    decorateReply: false,
+  });
+}
 
 await registerRoutes(app);
 
