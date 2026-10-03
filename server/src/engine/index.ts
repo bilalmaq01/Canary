@@ -218,41 +218,18 @@ export function createEngine(): Engine {
     // Interim lines never update state
     if (!isFinal) return snapshot();
 
-    // Already intervened — no further changes
-    if (intervened) return snapshot();
-
     // Add to sliding window (last 6 final lines)
     recentLines.push(text);
     if (recentLines.length > 6) recentLines.shift();
 
     const joinedRecent = recentLines.map((l) => l.toLowerCase()).join(" ");
-
-    // ── High-risk path ──────────────────────────────────────────────────────
-    const highRisk = checkHighRisk(joinedRecent, text, recentLines);
-    if (highRisk) {
-      intervened = true;
-      lastResult = {
-        score,
-        categoriesAwarded: Array.from(categoriesAwarded),
-        triggered: true,
-        triggerPath: "high_risk",
-        clipId: highRisk.clipId,
-        evidence: {
-          triggerPath: "high_risk",
-          category: highRisk.category,
-          quotedLine: highRisk.quotedLine,
-        },
-      };
-      return snapshot();
-    }
-
-    // ── Score path ──────────────────────────────────────────────────────────
     const lineLower = text.toLowerCase();
     const previousLine =
       recentLines.length >= 2
         ? recentLines[recentLines.length - 2].toLowerCase()
         : undefined;
 
+    // ── Score path always runs (accumulates even after intervention) ────────
     const checks: { cat: Category; fired: boolean }[] = [
       { cat: "payment", fired: checkPayment(lineLower) },
       { cat: "access", fired: checkAccess(lineLower) },
@@ -268,8 +245,29 @@ export function createEngine(): Engine {
       }
     }
 
-    // Check score threshold
-    if (score >= 70 && categoriesAwarded.size >= 3 && !intervened) {
+    // ── High-risk path (triggers once) ─────────────────────────────────────
+    if (!intervened) {
+      const highRisk = checkHighRisk(joinedRecent, text, recentLines);
+      if (highRisk) {
+        intervened = true;
+        lastResult = {
+          score,
+          categoriesAwarded: Array.from(categoriesAwarded),
+          triggered: true,
+          triggerPath: "high_risk",
+          clipId: highRisk.clipId,
+          evidence: {
+            triggerPath: "high_risk",
+            category: highRisk.category,
+            quotedLine: highRisk.quotedLine,
+          },
+        };
+        return snapshot();
+      }
+    }
+
+    // ── Score path trigger (triggers once) ─────────────────────────────────
+    if (!intervened && score >= 70 && categoriesAwarded.size >= 3) {
       intervened = true;
       lastResult = {
         score,
