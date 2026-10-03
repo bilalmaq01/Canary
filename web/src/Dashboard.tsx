@@ -69,7 +69,10 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
       <header className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-        <span className="text-lg font-bold tracking-tight">ScamCallShield</span>
+        <div className="flex flex-col leading-tight">
+          <span className="text-lg font-bold tracking-tight">Canary AI</span>
+          <span className="text-xs text-gray-400 tracking-wide">the canary in your phone line</span>
+        </div>
         <div className="flex items-center gap-2 text-sm">
           <span
             className={`w-2 h-2 rounded-full ${data.wsConnected ? "bg-green-500" : "bg-gray-500"}`}
