@@ -12,7 +12,7 @@ import { registerRoutes } from "./routes/index.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, "../..");
 const webDist = join(projectRoot, "web/dist");
-const assetsDir = join(projectRoot, "assets");
+const assetsDir = join(projectRoot, "audio");
 
 const app = Fastify({ logger: true });
 
