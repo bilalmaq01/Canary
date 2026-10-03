@@ -18,7 +18,7 @@ export async function runReplay(
   fixtureName: string,
   playClip: (clip: ClipId) => Promise<"played" | "failed">
 ): Promise<void> {
-  const fixturePath = join(__dirname, "../../fixtures", `${fixtureName}.json`);
+  const fixturePath = join(__dirname, "../fixtures", `${fixtureName}.json`);
   let lines: string[];
   try {
     lines = JSON.parse(readFileSync(fixturePath, "utf-8"));
