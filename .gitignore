@@ -9,3 +9,7 @@ yarn-error.log*
 .pnp.js
 
 .vscode/*
+dist/
+.env
+*.mp3
+.DS_Store
