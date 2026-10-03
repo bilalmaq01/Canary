@@ -1,5 +1,8 @@
 /tmp
 /out-tsc
+.claude/
+.idea/
+.mcp.json
 
 /node_modules
 npm-debug.log*
