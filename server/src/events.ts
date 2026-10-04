@@ -24,6 +24,7 @@ export interface TranscriptLine {
   text: string;
   isFinal: boolean;
   timestamp: Date;
+  triggeredCategories?: Category[];
 }
 
 export interface Evidence {
@@ -43,6 +44,7 @@ export interface Session {
   evidence?: Evidence;
   contactRecommendation?: "end" | "review";
   startedAt: Date;
+  lineType?: string;
 }
 
 export interface CallSource {
@@ -61,7 +63,9 @@ export type ServerEvent =
   | { type: "intervention"; clipId: ClipId; triggerPath: TriggerPath; evidence: Evidence }
   | { type: "clip_result"; clipId: ClipId; result: "played" | "failed" }
   | { type: "contact_action"; recommendation: "end" | "review" }
-  | { type: "session_ended" };
+  | { type: "session_ended" }
+  | { type: "voip_info"; lineType: string }
+  | { type: "agent_joined" };
 
 export type ClientEvent =
   | { type: "start_replay"; fixture: string }

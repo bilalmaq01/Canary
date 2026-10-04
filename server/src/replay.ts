@@ -33,17 +33,24 @@ export async function runReplay(
     const currentSession = getSession(session.id)!; // re-fetch in case state changed
     if (currentSession.state === "ended") break;
 
-    // Publish as transcript line
-    const line = { text, isFinal: true, timestamp: new Date() };
-    currentSession.transcript.push(line);
-    publish(currentSession.id, { type: "transcript", line });
-
-    // Run through engine
+    // Run through engine first so we can annotate the line
+    const prevCats = new Set(currentSession.categoriesAwarded);
     const result = engine.processLine(text, true);
+    const newCats = result.categoriesAwarded.filter((c) => !prevCats.has(c));
 
     // Keep server-side session in sync with engine state
     currentSession.score = result.score;
     currentSession.categoriesAwarded = new Set(result.categoriesAwarded);
+
+    // Publish as transcript line with triggered categories
+    const line = {
+      text,
+      isFinal: true,
+      timestamp: new Date(),
+      ...(newCats.length > 0 && { triggeredCategories: newCats }),
+    };
+    currentSession.transcript.push(line);
+    publish(currentSession.id, { type: "transcript", line });
 
     // Publish score update
     publish(currentSession.id, {

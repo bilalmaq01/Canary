@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import twilio from "twilio";
 import { createSession, getSession } from "../session.js";
 import { handleTwilioStream } from "../twilio-source.js";
+import { publish } from "../bus.js";
 import type { ClipId } from "../events.js";
 
 const {
@@ -56,6 +57,21 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
         console.error("Failed to dial protected user:", e);
       }
     }
+
+    // VoIP badge: async lookup — must never block the call
+    if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && callerNumber) {
+      const lookupClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+      void lookupClient.lookups.v2.phoneNumbers(callerNumber)
+        .fetch({ fields: "line_type_intelligence" })
+        .then((data) => {
+          const lineType = (data as any).lineTypeIntelligence?.type as string | undefined;
+          if (lineType) {
+            session.lineType = lineType;
+            publish(session.id, { type: "voip_info", lineType });
+          }
+        })
+        .catch(() => {});
+    }
   });
 
   // WebSocket: /twilio/stream/:sessionId — receives mu-law audio from Twilio
@@ -82,6 +98,22 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
           announceUrl: `${BASE_URL}/audio/${clipId}.mp3`,
           announceMethod: "GET",
         });
+
+        // Dial in the ElevenLabs challenge agent if configured
+        const agentNumber = process.env.ELEVENLABS_AGENT_NUMBER;
+        if (agentNumber && TWILIO_PHONE_NUMBER) {
+          try {
+            await client.calls.create({
+              to: agentNumber,
+              from: TWILIO_PHONE_NUMBER,
+              twiml: `<Response><Dial><Conference>${"conf-" + sessionId}</Conference></Dial></Response>`,
+            });
+            publish(sessionId, { type: "agent_joined" });
+          } catch (e) {
+            console.error("Failed to dial ElevenLabs agent:", e);
+          }
+        }
+
         return "played";
       } catch (e) {
         console.error("Conference announce failed:", e);

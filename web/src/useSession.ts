@@ -13,6 +13,8 @@ export interface SessionData {
   lastClipResult: { clipId: ClipId; result: "played" | "failed" } | null;
   wsConnected: boolean;
   sessionType: "replay" | "live" | null;
+  lineType?: string;
+  agentJoined: boolean;
 }
 
 const INITIAL_DATA: SessionData = {
@@ -27,6 +29,7 @@ const INITIAL_DATA: SessionData = {
   lastClipResult: null,
   wsConnected: false,
   sessionType: null,
+  agentJoined: false,
 };
 
 export function useSession() {
@@ -128,8 +131,18 @@ export function useSession() {
 
 function handleEvent(d: SessionData, event: ServerEvent): SessionData {
   switch (event.type) {
-    case "transcript":
+    case "transcript": {
+      // Update existing line if same text+isFinal already in transcript (category annotation update)
+      const existing = d.transcript.findIndex(
+        (l) => l.isFinal === event.line.isFinal && l.text === event.line.text
+      );
+      if (existing !== -1 && event.line.triggeredCategories) {
+        const updated = [...d.transcript];
+        updated[existing] = event.line;
+        return { ...d, transcript: updated };
+      }
       return { ...d, transcript: [...d.transcript, event.line] };
+    }
     case "score_update":
       return { ...d, score: event.score, categoriesAwarded: event.categoriesAwarded };
     case "state_change":
@@ -142,6 +155,10 @@ function handleEvent(d: SessionData, event: ServerEvent): SessionData {
       return { ...d, contactRecommendation: event.recommendation };
     case "session_ended":
       return { ...d, state: "ended" };
+    case "voip_info":
+      return { ...d, lineType: event.lineType };
+    case "agent_joined":
+      return { ...d, agentJoined: true };
     default:
       return d;
   }

@@ -25,25 +25,40 @@ export function handleTwilioStream(
     endpointing: 300,
   });
 
-  dgConnection.on(LiveTranscriptionEvents.Open, () => {
-    // Suppress unused-variable warning for streamSid during the open handler
-    void streamSid;
+  // Buffer audio that arrives before Deepgram opens so nothing is dropped
+  const audioQueue: ArrayBuffer[] = [];
+  let dgReady = false;
 
-    conn.socket.on("message", (data: Buffer) => {
-      const msg = JSON.parse(data.toString()) as {
-        event: string;
-        start?: { streamSid: string };
-        media?: { track: string; payload: string };
-      };
-      if (msg.event === "start" && msg.start) {
-        streamSid = msg.start.streamSid;
-      } else if (msg.event === "media" && msg.media?.track === "inbound") {
-        const audio = Buffer.from(msg.media.payload, "base64");
-        dgConnection.send(audio.buffer.slice(audio.byteOffset, audio.byteOffset + audio.byteLength) as ArrayBuffer);
-      } else if (msg.event === "stop") {
-        dgConnection.finish();
+  // Register message handler immediately — Twilio sends "start" + early media
+  // right away and won't wait for Deepgram's open event
+  conn.socket.on("message", (data: Buffer) => {
+    const msg = JSON.parse(data.toString()) as {
+      event: string;
+      start?: { streamSid: string };
+      media?: { track: string; payload: string };
+    };
+    if (msg.event === "start" && msg.start) {
+      streamSid = msg.start.streamSid;
+    } else if (msg.event === "media" && msg.media?.track === "inbound") {
+      const audio = Buffer.from(msg.media.payload, "base64");
+      const buf = audio.buffer.slice(audio.byteOffset, audio.byteOffset + audio.byteLength) as ArrayBuffer;
+      if (dgReady) {
+        dgConnection.send(buf);
+      } else {
+        audioQueue.push(buf);
       }
-    });
+    } else if (msg.event === "stop") {
+      dgConnection.finish();
+    }
+  });
+
+  dgConnection.on(LiveTranscriptionEvents.Open, () => {
+    dgReady = true;
+    // Flush any audio that arrived before Deepgram was ready
+    for (const buf of audioQueue) {
+      dgConnection.send(buf);
+    }
+    audioQueue.length = 0;
   });
 
   dgConnection.on(LiveTranscriptionEvents.Transcript, (data: any) => {
@@ -57,19 +72,27 @@ export function handleTwilioStream(
     const currentSession = getSession(session.id);
     if (!currentSession || currentSession.state === "ended") return;
 
-    const line = { text, isFinal, timestamp: new Date() };
-
-    if (isFinal) {
-      currentSession.transcript.push(line);
-    }
+    const line: import("./events.js").TranscriptLine = { text, isFinal, timestamp: new Date() };
 
     publish(session.id, { type: "transcript", line });
 
     if (!isFinal) return;
 
+    const prevCats = new Set(currentSession.categoriesAwarded);
     const result = engine.processLine(text, true);
+    const newCats = result.categoriesAwarded.filter((c) => !prevCats.has(c));
     currentSession.score = result.score;
     currentSession.categoriesAwarded = new Set(result.categoriesAwarded);
+
+    if (newCats.length > 0) {
+      line.triggeredCategories = newCats;
+      // Re-publish with annotation so connected dashboards get the flag
+      publish(session.id, { type: "transcript", line });
+    }
+
+    if (isFinal) {
+      currentSession.transcript.push(line);
+    }
     publish(session.id, {
       type: "score_update",
       score: result.score,

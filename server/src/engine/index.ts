@@ -123,19 +123,43 @@ function checkHighRisk(
 
 function checkPayment(line: string): boolean {
   if (containsAny(line, ["birthday", "present", "gift for", "anniversary", "holiday gift"])) return false;
+
   const paymentMethods = [
+    // Gift cards
     "gift card", "gift cards", "prepaid card", "itunes", "google play",
     "amazon gift", "steam card", "apple gift", "best buy gift", "target gift",
     "walmart gift", "cvs gift", "vanilla card", "green dot", "moneypak",
-    "wire transfer", "wire the money", "western union", "moneygram", "money gram",
-    "zelle", "venmo", "cash app", "cashapp", "crypto", "bitcoin", "ethereum",
-    "cryptocurrency", "digital currency", "money order",
+    "ebay gift", "nordstrom gift", "sephora gift",
+    // Wire / transfer services
+    "wire transfer", "wire the money", "wire funds", "western union", "moneygram",
+    "money gram", "zelle", "venmo", "cash app", "cashapp", "paypal",
+    // Crypto
+    "crypto", "bitcoin", "ethereum", "cryptocurrency", "digital currency",
+    "bitcoin atm", "crypto atm",
+    // Cash / check
+    "money order", "cashier's check", "cashier check", "cash withdrawal",
+    "withdraw cash", "withdraw the money", "withdraw funds",
+    // Bank-direction scam phrases
+    "go to your bank", "go to the bank", "head to the bank", "drive to the bank",
+    "go to an atm", "go to a bitcoin", "shipping money", "send the money",
+    "send cash", "send funds", "send over the money",
+    // Overpayment scam
+    "send back the difference", "return the overpayment", "refund the excess",
   ];
   const paymentVerbs = [
     "pay", "send", "purchase", "buy", "transfer", "get me", "go get",
     "go buy", "pick up", "obtain", "need you to", "want you to",
-    "have you", "i need", "you need", "must", "withdraw",
+    "i need", "you need", "must", "withdraw", "take out", "pull out",
   ];
+
+  // Standalone strong signals that don't need a verb pairing
+  const standalone = [
+    "go to your bank", "go to the bank", "head to the bank", "drive to the bank",
+    "go to an atm", "go to a bitcoin atm", "shipping money",
+    "send the money", "send cash", "send back the difference",
+  ];
+  if (containsAny(line, standalone)) return true;
+
   return containsAny(line, paymentMethods) && containsAny(line, paymentVerbs);
 }
 
@@ -144,15 +168,17 @@ function checkAccess(line: string): boolean {
   const accessMethods = [
     "remote access", "screen control", "screen share", "screen sharing",
     "teamviewer", "anydesk", "logmein", "chrome remote", "remote desktop",
-    "remote session", "take control", "control of your",
+    "remote session", "take control", "control of your", "take over your",
     "install", "download",
     "verification code", "login code", "code we", "one-time code", "one time code",
     "security code", "access code", "otp", "passcode", "two-factor", "2fa",
-    "authentication code", "pin number",
+    "authentication code", "pin number", "temporary code", "reset code",
+    "account number", "routing number", "social security number",
   ];
   const accessVerbs = [
     "give", "read", "allow", "provide", "install", "download",
-    "share", "enter", "type", "tell me", "send me",
+    "share", "enter", "type", "tell me", "send me", "confirm",
+    "verify", "need your", "require your",
   ];
   return containsAny(line, accessMethods) && containsAny(line, accessVerbs);
 }
@@ -165,11 +191,15 @@ function checkSecrecy(line: string): boolean {
     "keep this confidential", "confidential matter", "cannot tell",
     "don't let anyone", "do not let anyone", "do not contact",
     "don't contact", "don't call", "do not call your",
+    "this is private", "between you and me", "just between us",
+    "don't speak to", "do not speak to", "do not inform",
+    "hang up if anyone", "step away from",
   ];
   const secrecyTargets = [
     "bank", "family", "anyone", "wife", "husband", "children", "kids",
     "friends", "relatives", "lawyer", "attorney", "accountant",
     "financial advisor", "police", "nobody", "no one", "others",
+    "teller", "bank employee", "bank manager", "neighbor", "someone else",
   ];
   return containsAny(line, secrecyPhrases) && containsAny(line, secrecyTargets);
 }
@@ -178,6 +208,7 @@ function checkAuthority(line: string, previousLine: string | undefined): boolean
   const demandWords = [
     "must", "need to", "have to", "required", "immediately", "today", "now",
     "right away", "urgent", "time sensitive", "as soon as", "cannot wait",
+    "action required", "respond", "contact us",
   ];
   const authorityOrgs = [
     "office", "department", "division", "agency", "bureau",
@@ -186,7 +217,9 @@ function checkAuthority(line: string, previousLine: string | undefined): boolean
     "fbi", "dea", "ftc", "sec", "treasury", "homeland",
     "attorney general", "prosecutor", "court", "courthouse",
     "sheriff", "detective", "officer", "agent",
-    "fraud department", "fraud division", "investigations",
+    "fraud department", "fraud division", "fraud team", "investigations",
+    "bank", "credit union", "financial institution", "visa", "mastercard",
+    "amazon", "microsoft", "apple support", "tech support",
   ];
   const authClaims = [
     "this is the", "this is",
@@ -197,6 +230,8 @@ function checkAuthority(line: string, previousLine: string | undefined): boolean
     "on behalf of the", "on behalf of",
     "representing the", "this call is from",
     "you are being contacted by",
+    "we've detected", "we detected", "we noticed", "we have identified",
+    "our system", "our records", "our department",
   ];
 
   const lineHasAuth = containsAny(line, authClaims) && containsAny(line, authorityOrgs);
@@ -209,24 +244,49 @@ function checkAuthority(line: string, previousLine: string | undefined): boolean
   }
   if (prevHasAuth && containsAny(line, demandWords)) return true;
 
+  // Standalone fraud-claim patterns — high signal on their own
+  const fraudClaims = [
+    "fraudulent purchase", "fraudulent transaction", "fraudulent charge",
+    "suspicious activity on your", "suspicious transaction",
+    "unauthorized transaction", "unauthorized charge", "unauthorized access",
+    "your account has been compromised", "your account has been flagged",
+    "detected suspicious", "detected fraud", "detected a fraudulent",
+    "we have flagged", "flagged your account",
+  ];
+  if (containsAny(line, fraudClaims)) return true;
+
   return false;
 }
 
 function checkUrgency(line: string): boolean {
   const urgencyTriggers = [
+    // Time pressure
     "today", "right now", "immediately", "within the hour", "within 24",
-    "expires", "expiring", "warrant", "arrest", "police", "officers",
+    "expires", "expiring", "deadline", "time is running out",
+    // Legal / law enforcement
+    "warrant", "arrest", "arrested", "police", "officers", "law enforcement",
+    "legal action", "lawsuit", "court", "summons", "charges", "prosecuted",
+    "criminal charges", "federal charges", "indictment", "sue you",
+    // Account actions
     "freeze", "frozen", "suspend", "suspended", "block", "blocked",
-    "legal action", "lawsuit", "court", "summons", "charges",
-    "criminal charges", "federal charges", "indictment",
+    "close your account", "account will be closed", "shut down your account",
+    "your benefits", "benefits will stop", "benefits will be terminated",
+    // Consequences
+    "lose your job", "lose your pension", "lose your home", "lose your license",
+    "lose your benefits", "lose your savings", "lose everything",
+    "jail", "prison", "deported", "deportation",
+    "fine", "penalty", "penalties",
+    // Overdue / final notices
     "final notice", "final warning", "last chance", "last opportunity",
     "overdue", "past due", "delinquent", "default",
-    "deportation", "deported", "jail", "prison",
+    // Compromise claims
+    "compromised", "hacked", "stolen", "identity theft",
   ];
   const urgencyConsequences = [
     "must", "have to", "need to", "or", "otherwise", "unless",
     "will be", "going to be", "could be", "may be", "might be",
-    "failure to", "if you do not", "if you don't",
+    "failure to", "if you do not", "if you don't", "we will", "they will",
+    "you will", "you could", "you may",
   ];
   return containsAny(line, urgencyTriggers) && containsAny(line, urgencyConsequences);
 }
@@ -313,7 +373,7 @@ export function createEngine(): Engine {
     }
 
     // ── Score path trigger (triggers once) ─────────────────────────────────
-    if (!intervened && score >= 70 && categoriesAwarded.size >= 3) {
+    if (!intervened && score >= 60 && categoriesAwarded.size >= 3) {
       intervened = true;
       lastResult = {
         score,
@@ -340,7 +400,7 @@ export function createEngine(): Engine {
     score += CATEGORY_POINTS[category];
 
     // Fire score-path trigger if threshold met and not yet intervened
-    if (!intervened && score >= 70 && categoriesAwarded.size >= 3) {
+    if (!intervened && score >= 60 && categoriesAwarded.size >= 3) {
       intervened = true;
       lastResult = {
         score,

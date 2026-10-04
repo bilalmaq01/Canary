@@ -11,6 +11,14 @@ const CATEGORY_ICONS: Record<string, string> = {
   urgency: "⚡",
 };
 
+const CAT_BADGE: Record<string, string> = {
+  payment: "bg-red-900 text-red-300 border border-red-700",
+  access: "bg-blue-900 text-blue-300 border border-blue-700",
+  secrecy: "bg-purple-900 text-purple-300 border border-purple-700",
+  authority: "bg-amber-900 text-amber-300 border border-amber-700",
+  urgency: "bg-yellow-900 text-yellow-300 border border-yellow-700",
+};
+
 function statePillClass(state: SessionState): string {
   switch (state) {
     case "monitoring":
@@ -109,30 +117,37 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
-              <div className="h-64 flex flex-col justify-end gap-2 overflow-hidden">
-                {data.transcript.length === 0 ? (
-                  <p className="text-gray-500 italic text-sm">
-                    {sessionActive ? "Call connected — waiting for speech..." : "Watching for incoming call..."}
-                  </p>
-                ) : (() => {
+              <div className="h-64 overflow-y-auto flex flex-col gap-2">
+                {(() => {
                   const finals = data.transcript.filter((l) => l.isFinal);
-                  const interim = data.transcript.filter((l) => !l.isFinal).at(-1);
-                  const lastFinal = finals.at(-1);
-                  return (
-                    <>
-                      {lastFinal && (
-                        <p className="text-sm text-white font-medium leading-relaxed">
-                          {lastFinal.text}
-                        </p>
+                  if (finals.length === 0) {
+                    return (
+                      <p className="text-gray-500 italic text-sm mt-auto">
+                        {sessionActive ? "Call connected — waiting for speech..." : "Watching for incoming call..."}
+                      </p>
+                    );
+                  }
+                  return finals.map((line, i) => (
+                    <div key={i} className="flex flex-col gap-1">
+                      <p className={`text-sm leading-relaxed ${i === finals.length - 1 ? "text-white font-medium" : "text-gray-400"}`}>
+                        {line.text}
+                      </p>
+                      {line.triggeredCategories && line.triggeredCategories.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {line.triggeredCategories.map((cat) => (
+                            <span
+                              key={cat}
+                              className={`text-xs px-2 py-0.5 rounded-full font-medium ${CAT_BADGE[cat] ?? "bg-gray-700 text-gray-300"}`}
+                            >
+                              {CATEGORY_ICONS[cat]} {categoryLabel(cat)}
+                            </span>
+                          ))}
+                        </div>
                       )}
-                      {interim && (
-                        <p className="text-sm text-gray-400 leading-relaxed">
-                          {interim.text}
-                        </p>
-                      )}
-                    </>
-                  );
+                    </div>
+                  ));
                 })()}
+                <div ref={bottomRef} />
               </div>
             </div>
 
@@ -203,6 +218,11 @@ export default function Dashboard() {
                   ))}
                 </div>
               )}
+              {data.lineType && (
+                <span className="text-xs bg-gray-700 text-gray-400 border border-gray-600 px-2 py-0.5 rounded-full self-start">
+                  📡 {data.lineType.toUpperCase()} — informational
+                </span>
+              )}
             </div>
 
             {data.evidence !== null && (
@@ -245,6 +265,12 @@ export default function Dashboard() {
             {data.state === "ended" && data.evidence === null && (
               <div className="bg-green-900 border border-green-600 rounded-xl p-4 text-sm text-green-300 font-medium text-center">
                 No suspicious request detected so far.
+              </div>
+            )}
+
+            {data.agentJoined && (
+              <div className="bg-blue-900 border border-blue-600 rounded-xl p-3 text-sm text-blue-300 font-medium">
+                🤖 AI screening agent active — challenging caller
               </div>
             )}
 

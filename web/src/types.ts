@@ -13,6 +13,7 @@ export interface TranscriptLine {
   text: string;
   isFinal: boolean;
   timestamp: string;
+  triggeredCategories?: Category[];
 }
 
 export interface Evidence {
@@ -28,4 +29,6 @@ export type ServerEvent =
   | { type: "intervention"; clipId: ClipId; triggerPath: TriggerPath; evidence: Evidence }
   | { type: "clip_result"; clipId: ClipId; result: "played" | "failed" }
   | { type: "contact_action"; recommendation: "end" | "review" }
-  | { type: "session_ended" };
+  | { type: "session_ended" }
+  | { type: "voip_info"; lineType: string }
+  | { type: "agent_joined" };
