@@ -348,6 +348,22 @@ function checkAuthority(line: string, previousLine: string | undefined): boolean
   }
   if (prevHasAuth && containsAnyWord(line, demandWords)) return true;
 
+  // Government / law-enforcement impersonation fires on the claim alone — no
+  // demand word required. A legitimate caller almost never opens with "this is
+  // the IRS / FBI / Social Security Administration". Word-boundary matched so
+  // "irs" does not match "first", "sec" does not match "security", etc.
+  const govEnforcementOrgs = [
+    "irs", "fbi", "dea", "ftc", "sec", "cia",
+    "social security", "medicare", "medicaid",
+    "homeland security", "customs", "border protection", "immigration",
+    "attorney general", "treasury department", "u.s. treasury",
+    "marshal", "interpol", "sheriff", "state police", "police department",
+  ];
+  const govClaim = containsAny(line, authClaims) && containsAnyWord(line, govEnforcementOrgs);
+  const prevGovClaim = previousLine !== undefined &&
+    containsAny(previousLine, authClaims) && containsAnyWord(previousLine, govEnforcementOrgs);
+  if (govClaim || prevGovClaim) return true;
+
   // Tech-support impersonation: an authority/tech-company claim paired with a
   // device-problem claim (often split across two lines in a live transcript).
   const deviceProblemClaims = [
@@ -413,6 +429,18 @@ function checkUrgency(line: string): boolean {
     "you will", "you could", "you may",
     "we need", "to keep", "to avoid", "to prevent",
   ];
+  // Self-contained threats / deadlines — the phrase is the urgency, no separate
+  // consequence connector needed (e.g. "deputies will come to your home").
+  const standaloneUrgency = [
+    "within two hours", "within an hour", "within one hour", "within the hour",
+    "within 24 hours", "within twenty-four hours", "twenty-four hours", "twenty four hours",
+    "come to your home", "come to your door", "come to your house",
+    "deputies will come", "officers will come", "police will come", "sheriff will come",
+    "warrant for your arrest", "arrest warrant", "you will be arrested",
+    "final notice", "final warning", "last chance", "last warning",
+  ];
+  if (containsAny(line, standaloneUrgency)) return true;
+
   return containsAnyWord(line, urgencyTriggers) && containsAnyWord(line, urgencyConsequences);
 }
 
