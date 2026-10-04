@@ -48,6 +48,7 @@ export interface Session {
   trustedContactPhone?: string;
   contactUrl?: string;
   userId?: string;
+  victimCallSid?: string;
 }
 
 export interface CallSource {

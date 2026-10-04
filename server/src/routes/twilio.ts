@@ -57,11 +57,12 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
     if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE_NUMBER && PROTECTED_PHONE_NUMBER) {
       const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
       try {
-        await client.calls.create({
+        const victimCall = await client.calls.create({
           to: PROTECTED_PHONE_NUMBER,
           from: TWILIO_PHONE_NUMBER,
           twiml: `<Response><Dial><Conference>${"conf-" + session.id}</Conference></Dial></Response>`,
         });
+        session.victimCallSid = victimCall.sid;
       } catch (e) {
         console.error("Failed to dial protected user:", e);
       }
@@ -133,15 +134,22 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
     handleTwilioStream(conn, session, playClip);
   });
 
-  // POST /twilio/call-ended/:sessionId — fires when the caller hangs up
+  // POST /twilio/call-ended/:sessionId — fires when the caller (scammer) hangs up
   app.post("/twilio/call-ended/:sessionId", async (req, reply) => {
     const { sessionId } = req.params as { sessionId: string };
     const session = getSession(sessionId);
     if (session && session.state !== "ended") {
       session.state = "ended";
       publish(sessionId, { type: "session_ended" });
+
+      // Hang up the victim's outbound leg so they don't sit in a dead conference
+      if (session.victimCallSid && TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN) {
+        const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+        client.calls(session.victimCallSid)
+          .update({ status: "completed" })
+          .catch((e) => console.error("Failed to hang up victim call:", e));
+      }
     }
-    // Return empty TwiML so Twilio doesn't complain
     reply.header("Content-Type", "text/xml").send(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`);
   });
 
