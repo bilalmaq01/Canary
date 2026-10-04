@@ -38,30 +38,38 @@ function checkHighRisk(
     "gift card", "gift cards", "itunes", "google play", "amazon gift",
     "steam card", "prepaid card", "vanilla card", "green dot",
   ]);
-  if (
-    hasCardType &&
-    contains(joinedRecent, "read") &&
-    containsAny(joinedRecent, ["code", "codes", "number", "numbers", "back"])
-  ) {
-    const thirdPersonSubjects = ["she ", "he ", "her ", "him "];
-    let gcLine: string | undefined;
+
+  const thirdPersonSubjects = ["she ", "he ", "her ", "him "];
+  const isThirdPerson = (() => {
     for (let i = recentLines.length - 1; i >= 0; i--) {
-      if (containsAny(recentLines[i].toLowerCase(), ["gift card", "itunes", "prepaid"])) {
-        gcLine = recentLines[i].toLowerCase();
-        break;
+      const l = recentLines[i].toLowerCase();
+      if (containsAny(l, ["gift card", "itunes", "prepaid"])) {
+        const idx = Math.max(l.indexOf("gift card"), l.indexOf("itunes"), l.indexOf("prepaid"));
+        const before = l.slice(0, idx);
+        return thirdPersonSubjects.some((s) => before.includes(s));
       }
     }
-    if (gcLine !== undefined) {
-      const gcIdx = Math.max(
-        gcLine.indexOf("gift card"),
-        gcLine.indexOf("itunes"),
-        gcLine.indexOf("prepaid")
-      );
-      const beforeGc = gcLine.slice(0, gcIdx);
-      if (!thirdPersonSubjects.some((s) => beforeGc.includes(s))) {
-        return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
-      }
-    } else {
+    return false;
+  })();
+
+  if (hasCardType && !isThirdPerson) {
+    // 1a — code/number demand (read, give me, tell me, etc.)
+    if (
+      containsAny(joinedRecent, ["read", "give me", "tell me", "provide", "send me", "share", "type"]) &&
+      containsAny(joinedRecent, ["code", "codes", "number", "numbers", "back", "pin", "serial", "digit"])
+    ) {
+      return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
+    }
+    // 1b — explicit buy/pay demand for gift cards (no code request needed)
+    if (
+      containsAny(joinedRecent, [
+        "buy gift card", "buy itunes", "buy google play", "buy steam", "buy amazon gift",
+        "get gift card", "get itunes", "pick up gift card", "go buy gift card",
+        "purchase gift card", "pay with gift card", "pay using gift card",
+        "pay in gift card", "payment in gift card", "payment with gift card",
+        "send gift card", "need gift card",
+      ])
+    ) {
       return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
     }
   }
@@ -93,7 +101,20 @@ function checkHighRisk(
     return { clipId: "warning-remote-access", category: "access", quotedLine: currentLine };
   }
 
-  // Trigger 4 — arrest/warrant threat
+  // Trigger 4 — unambiguous crypto/P2P payment demand
+  if (
+    containsAny(joinedRecent, [
+      "bitcoin atm", "crypto atm", "send bitcoin", "buy bitcoin",
+      "send crypto", "send ethereum", "buy ethereum",
+      "western union", "moneygram",
+      "zelle me", "venmo me", "cash app me",
+    ]) &&
+    containsAny(joinedRecent, ["need", "must", "have to", "right now", "today", "immediately", "now", "send", "pay"])
+  ) {
+    return { clipId: "warning-score", category: "payment", quotedLine: currentLine };
+  }
+
+  // Trigger 6 — arrest/warrant threat
   if (
     containsAny(joinedRecent, [
       "warrant for your arrest", "arrest warrant", "issued a warrant",
@@ -103,7 +124,7 @@ function checkHighRisk(
     return { clipId: "warning-score", category: "urgency", quotedLine: currentLine };
   }
 
-  // Trigger 5 — SSN/account suspended
+  // Trigger 7 — SSN/account suspended
   if (
     containsAny(joinedRecent, [
       "social security number has been suspended",
@@ -373,7 +394,8 @@ export function createEngine(): Engine {
     }
 
     // ── Score path trigger (triggers once) ─────────────────────────────────
-    if (!intervened && score >= 60 && categoriesAwarded.size >= 3) {
+    // 2-category path: payment+secrecy, payment+access, or any two high-value cats
+    if (!intervened && score >= 55 && categoriesAwarded.size >= 2) {
       intervened = true;
       lastResult = {
         score,
@@ -400,7 +422,7 @@ export function createEngine(): Engine {
     score += CATEGORY_POINTS[category];
 
     // Fire score-path trigger if threshold met and not yet intervened
-    if (!intervened && score >= 60 && categoriesAwarded.size >= 3) {
+    if (!intervened && score >= 55 && categoriesAwarded.size >= 2) {
       intervened = true;
       lastResult = {
         score,
