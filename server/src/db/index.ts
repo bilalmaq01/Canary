@@ -29,6 +29,22 @@ export interface DbContact {
   created_at: number;
 }
 
+export interface DbCallHistory {
+  id: string;
+  user_id: string;
+  caller: string;
+  session_type: string;
+  started_at: number;
+  ended_at: number;
+  score: number;
+  categories: string; // JSON array of category strings
+  triggered: number; // 0 | 1
+  trigger_path: string | null;
+  evidence_quote: string | null;
+  evidence_category: string | null;
+  transcript: string; // JSON array of transcript lines
+}
+
 export async function initDb(): Promise<void> {
   await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS users (
@@ -46,6 +62,22 @@ export async function initDb(): Promise<void> {
       phone TEXT NOT NULL,
       created_at INTEGER DEFAULT (unixepoch())
     );
+    CREATE TABLE IF NOT EXISTS call_history (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      caller TEXT NOT NULL,
+      session_type TEXT NOT NULL,
+      started_at INTEGER NOT NULL,
+      ended_at INTEGER NOT NULL,
+      score INTEGER NOT NULL,
+      categories TEXT NOT NULL,
+      triggered INTEGER NOT NULL,
+      trigger_path TEXT,
+      evidence_quote TEXT,
+      evidence_category TEXT,
+      transcript TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_call_history_user ON call_history(user_id, ended_at DESC);
   `);
 }
 
@@ -88,6 +120,28 @@ export async function deleteContact(id: string, userId: string): Promise<boolean
     args: [id, userId],
   });
   return (r.rowsAffected ?? 0) > 0;
+}
+
+export async function insertCallHistory(row: Omit<DbCallHistory, "id"> & { id?: string }): Promise<void> {
+  const id = row.id ?? randomUUID();
+  await db.execute({
+    sql: `INSERT INTO call_history
+      (id, user_id, caller, session_type, started_at, ended_at, score, categories, triggered, trigger_path, evidence_quote, evidence_category, transcript)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      id, row.user_id, row.caller, row.session_type, row.started_at, row.ended_at,
+      row.score, row.categories, row.triggered, row.trigger_path, row.evidence_quote,
+      row.evidence_category, row.transcript,
+    ],
+  });
+}
+
+export async function getCallHistoryByUserId(userId: string, limit = 50): Promise<DbCallHistory[]> {
+  const r = await db.execute({
+    sql: "SELECT * FROM call_history WHERE user_id = ? ORDER BY ended_at DESC LIMIT ?",
+    args: [userId, limit],
+  });
+  return r.rows as unknown as DbCallHistory[];
 }
 
 export async function createUser(

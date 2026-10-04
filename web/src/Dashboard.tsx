@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "./useSession";
-import type { SessionState, Category } from "./types";
+import type { SessionState, Category, CallHistoryItem } from "./types";
 
 interface User {
   id: string;
@@ -41,6 +41,16 @@ function useContacts() {
   };
 
   return { contacts, loading, add, remove };
+}
+
+function useCallHistory(refreshKey: string) {
+  const [history, setHistory] = useState<CallHistoryItem[]>([]);
+  useEffect(() => {
+    fetch("/api/call-history")
+      .then(async (r) => { if (r.ok) setHistory((await r.json()) as CallHistoryItem[]); })
+      .catch(() => {});
+  }, [refreshKey]);
+  return history;
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -120,6 +130,7 @@ interface DashboardProps {
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const { data, scoreFlash, startSession, reset } = useSession();
   const { contacts, add: addContact, remove: removeContact } = useContacts();
+  const history = useCallHistory(data.state === "ended" ? (data.sessionId ?? "ended") : "active");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const prevCatLengthRef = useRef<number>(0);
   const [newName, setNewName] = useState("");
@@ -242,6 +253,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 </>
               )}
             </div>
+
+            <CallHistoryPanel history={history} />
           </div>
 
           <div className="flex flex-col gap-4">
@@ -401,6 +414,94 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function CallHistoryPanel({ history }: { history: CallHistoryItem[] }) {
+  return (
+    <div className="bg-gray-900 rounded-xl p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-gray-100 text-sm">
+          Call History
+          {history.length > 0 && (
+            <span className="ml-2 text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded-full">
+              {history.length}
+            </span>
+          )}
+        </h2>
+      </div>
+
+      {history.length === 0 ? (
+        <p className="text-xs text-gray-600">Past calls will appear here once a call ends.</p>
+      ) : (
+        <div className="flex flex-col gap-2 max-h-96 overflow-y-auto">
+          {history.map((call) => (
+            <details key={call.id} className="bg-gray-800 rounded-lg px-3 py-2 group">
+              <summary className="flex items-center justify-between gap-2 cursor-pointer list-none">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm text-white truncate">
+                    {call.sessionType === "replay" ? "📻 " : "📞 "}{call.caller}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(call.endedAt * 1000).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-gray-400">{call.score} pts</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      call.triggered
+                        ? "bg-red-900 text-red-300 border border-red-700"
+                        : "bg-green-900 text-green-300 border border-green-700"
+                    }`}
+                  >
+                    {call.triggered ? "Flagged" : "Clear"}
+                  </span>
+                </div>
+              </summary>
+
+              <div className="mt-3 flex flex-col gap-3 border-t border-gray-700 pt-3">
+                {call.triggered && call.evidence && (
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-xs font-semibold text-red-400">Why it was flagged</p>
+                    <p className="text-sm italic text-gray-200 border-l-2 border-red-500 pl-2">
+                      "{call.evidence.quotedLine}"
+                    </p>
+                    {call.categoriesAwarded.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {call.categoriesAwarded.map((cat) => (
+                          <span
+                            key={cat}
+                            className={`text-xs px-2 py-0.5 rounded-full font-medium ${CAT_BADGE[cat] ?? "bg-gray-700 text-gray-300"}`}
+                          >
+                            {CATEGORY_ICONS[cat]} {categoryLabel(cat)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-semibold text-gray-400">Transcript</p>
+                  {call.transcript.filter((l) => l.isFinal).length === 0 ? (
+                    <p className="text-xs text-gray-600 italic">No speech captured.</p>
+                  ) : (
+                    call.transcript
+                      .filter((l) => l.isFinal)
+                      .map((line, i) => (
+                        <p key={i} className="text-xs text-gray-400 leading-relaxed">
+                          {line.text}
+                        </p>
+                      ))
+                  )}
+                </div>
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

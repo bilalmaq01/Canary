@@ -50,6 +50,9 @@ export interface Session {
   userId?: string;
   victimCallSid?: string;
   callerCallSid?: string;
+  callerNumber?: string;
+  sessionType?: "live" | "replay";
+  persisted?: boolean;
 }
 
 export interface CallSource {

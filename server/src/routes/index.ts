@@ -30,6 +30,31 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     });
   });
 
+  // GET /api/call-history — past calls for the signed-in user (most recent first)
+  app.get("/api/call-history", async (req, reply) => {
+    const user = await getUserFromRequest(req);
+    if (!user) return reply.status(401).send({ error: "Unauthorized" });
+    const { getCallHistoryByUserId } = await import("../db/index.js");
+    const rows = await getCallHistoryByUserId(user.id);
+    return reply.send(
+      rows.map((r) => ({
+        id: r.id,
+        caller: r.caller,
+        sessionType: r.session_type,
+        startedAt: r.started_at,
+        endedAt: r.ended_at,
+        score: r.score,
+        categoriesAwarded: JSON.parse(r.categories) as string[],
+        triggered: r.triggered === 1,
+        triggerPath: r.trigger_path,
+        evidence: r.evidence_quote
+          ? { quotedLine: r.evidence_quote, category: r.evidence_category }
+          : null,
+        transcript: JSON.parse(r.transcript) as unknown[],
+      }))
+    );
+  });
+
   // GET /api/session/active — returns the most recent non-ended session (for live call auto-connect)
   app.get("/api/session/active", async (_req, reply) => {
     const session = getLatestActiveSession();

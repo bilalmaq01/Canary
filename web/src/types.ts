@@ -22,6 +22,20 @@ export interface Evidence {
   quotedLine: string;
 }
 
+export interface CallHistoryItem {
+  id: string;
+  caller: string;
+  sessionType: "live" | "replay";
+  startedAt: number;
+  endedAt: number;
+  score: number;
+  categoriesAwarded: Category[];
+  triggered: boolean;
+  triggerPath: TriggerPath | null;
+  evidence: { quotedLine: string; category: Category | null } | null;
+  transcript: TranscriptLine[];
+}
+
 export type ServerEvent =
   | { type: "transcript"; line: TranscriptLine }
   | { type: "score_update"; score: number; categoriesAwarded: Category[] }

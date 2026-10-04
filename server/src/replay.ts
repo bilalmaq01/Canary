@@ -6,6 +6,7 @@ import { analyzeConversation, clipForCategories } from "./engine/gemini.js";
 import { intervene } from "./intervention.js";
 import { publish } from "./bus.js";
 import { getSession } from "./session.js";
+import { persistCall } from "./call-history.js";
 import type { Session, ClipId } from "./events.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -28,6 +29,7 @@ export async function runReplay(
   }
 
   const engine = createEngine();
+  session.sessionType = "replay";
 
   for (const text of lines) {
     const currentSession = getSession(session.id)!; // re-fetch in case state changed
@@ -108,9 +110,10 @@ export async function runReplay(
   }
 
   // End session
-  if (getSession(session.id)?.state !== "ended") {
-    const finalSession = getSession(session.id)!;
+  const finalSession = getSession(session.id);
+  if (finalSession && finalSession.state !== "ended") {
     finalSession.state = "ended";
     publish(finalSession.id, { type: "session_ended" });
   }
+  if (finalSession) await persistCall(finalSession);
 }

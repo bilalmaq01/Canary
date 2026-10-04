@@ -11,7 +11,7 @@ export default function PrivacyPage() {
 
       <main className="flex-1 p-4 sm:p-8 max-w-3xl mx-auto w-full">
         <h1 className="text-2xl font-bold mb-2">Privacy Policy</h1>
-        <p className="text-gray-500 text-sm mb-8">Last updated: October 3, 2026</p>
+        <p className="text-gray-500 text-sm mb-8">Last updated: October 4, 2026</p>
 
         <div className="flex flex-col gap-8 text-gray-300 leading-relaxed">
 
@@ -28,7 +28,8 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-semibold text-white mb-2">Information We Collect</h2>
             <ul className="list-disc pl-5 flex flex-col gap-2 text-sm">
               <li><strong className="text-white">Call audio (caller side only):</strong> Audio from the caller's line is streamed to Deepgram for speech-to-text transcription. Audio is not stored after transcription.</li>
-              <li><strong className="text-white">Transcribed text:</strong> Caller speech is transcribed and analyzed for scam patterns. Transcripts are held in memory for the duration of the session and discarded when the session ends.</li>
+              <li><strong className="text-white">Transcribed text:</strong> Caller speech is transcribed and analyzed for scam patterns. When a call ends, its transcript is saved to your account's call history (see Data Retention below).</li>
+              <li><strong className="text-white">Call history:</strong> After a call ends we store a record of it on your account — the caller's phone number, the transcript, the risk score, and, if the call was flagged, the reason and quoted line. This lets you review past calls. You can delete this history at any time by contacting us.</li>
               <li><strong className="text-white">Phone numbers:</strong> The caller's phone number is used for carrier line-type lookup (VoIP detection). It is not stored or shared.</li>
               <li><strong className="text-white">Email content (optional):</strong> If you use the email scanner, your Gmail credentials and email content are used only to perform the scan. Credentials are never stored on our server and are discarded immediately after the scan completes.</li>
               <li><strong className="text-white">SMS:</strong> If a scam is detected, we may send a one-time SMS alert to a trusted contact number you have designated. We do not send marketing messages. Message and data rates may apply.</li>
@@ -64,9 +65,11 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-2">Data Retention</h2>
             <p className="text-sm">
-              Session data (transcripts, scores, evidence) is held in memory only while the session is active.
-              It is discarded when the session ends or the server restarts. We do not write call data to a
-              persistent database. Email credentials and content are never written to disk or logs.
+              Live call audio is processed in memory only and is not stored after transcription. When a call
+              ends, a record of the call — caller number, transcript, risk score, and flagging reason — is
+              saved to a database tied to your account so you can review your call history. This history
+              persists until you ask us to delete it. Email credentials and content are never written to disk
+              or logs.
             </p>
           </section>
 

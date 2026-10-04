@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import twilio from "twilio";
 import { createSession, getSession } from "../session.js";
 import { handleTwilioStream } from "../twilio-source.js";
+import { persistCall } from "../call-history.js";
 import { publish } from "../bus.js";
 import type { ClipId } from "../events.js";
 
@@ -31,6 +32,8 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
     const session = createSession();
     const callerNumber = (req.body as any).From as string;
     session.callerCallSid = (req.body as any).CallSid as string;
+    session.callerNumber = callerNumber;
+    session.sessionType = "live";
 
     // Assign to the account owner so DB trusted contacts are included in SMS alerts
     const { getFirstUser } = await import("../db/index.js");
@@ -153,6 +156,7 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
           .update({ status: "completed" })
           .catch((e) => console.error("Failed to hang up victim call:", e));
       }
+      await persistCall(session);
     }
     reply.header("Content-Type", "text/xml").send(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`);
   });
@@ -172,6 +176,7 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
           .update({ status: "completed" })
           .catch((e) => console.error("Failed to hang up caller:", e));
       }
+      await persistCall(session);
     }
     reply.header("Content-Type", "text/xml").send(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`);
   });
