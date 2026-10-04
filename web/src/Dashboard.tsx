@@ -50,7 +50,22 @@ function useCallHistory(refreshKey: string) {
       .then(async (r) => { if (r.ok) setHistory((await r.json()) as CallHistoryItem[]); })
       .catch(() => {});
   }, [refreshKey]);
-  return history;
+
+  const remove = async (id: string) => {
+    const prev = history;
+    setHistory((h) => h.filter((c) => c.id !== id)); // optimistic
+    const res = await fetch(`/api/call-history/${id}`, { method: "DELETE" }).catch(() => null);
+    if (!res || !res.ok) setHistory(prev); // roll back on failure
+  };
+
+  const clearAll = async () => {
+    const prev = history;
+    setHistory([]); // optimistic
+    const res = await fetch("/api/call-history", { method: "DELETE" }).catch(() => null);
+    if (!res || !res.ok) setHistory(prev);
+  };
+
+  return { history, remove, clearAll };
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -130,7 +145,8 @@ interface DashboardProps {
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const { data, scoreFlash, startSession, reset } = useSession();
   const { contacts, add: addContact, remove: removeContact } = useContacts();
-  const history = useCallHistory(data.state === "ended" ? (data.sessionId ?? "ended") : "active");
+  const { history, remove: removeCall, clearAll: clearHistory } =
+    useCallHistory(data.state === "ended" ? (data.sessionId ?? "ended") : "active");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const prevCatLengthRef = useRef<number>(0);
   const [newName, setNewName] = useState("");
@@ -254,7 +270,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               )}
             </div>
 
-            <CallHistoryPanel history={history} />
+            <CallHistoryPanel history={history} onDelete={removeCall} onClearAll={clearHistory} />
           </div>
 
           <div className="flex flex-col gap-4">
@@ -418,7 +434,16 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   );
 }
 
-function CallHistoryPanel({ history }: { history: CallHistoryItem[] }) {
+function CallHistoryPanel({
+  history,
+  onDelete,
+  onClearAll,
+}: {
+  history: CallHistoryItem[];
+  onDelete: (id: string) => void;
+  onClearAll: () => void;
+}) {
+  const [confirmingClear, setConfirmingClear] = useState(false);
   return (
     <div className="bg-gray-900 rounded-xl p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -430,6 +455,32 @@ function CallHistoryPanel({ history }: { history: CallHistoryItem[] }) {
             </span>
           )}
         </h2>
+        {history.length > 0 && (
+          confirmingClear ? (
+            <span className="flex items-center gap-2 text-xs">
+              <span className="text-gray-400">Clear all?</span>
+              <button
+                onClick={() => { onClearAll(); setConfirmingClear(false); }}
+                className="text-red-400 hover:text-red-300 font-medium"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setConfirmingClear(false)}
+                className="text-gray-500 hover:text-gray-300"
+              >
+                No
+              </button>
+            </span>
+          ) : (
+            <button
+              onClick={() => setConfirmingClear(true)}
+              className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+            >
+              Clear all
+            </button>
+          )
+        )}
       </div>
 
       {history.length === 0 ? (
@@ -458,6 +509,14 @@ function CallHistoryPanel({ history }: { history: CallHistoryItem[] }) {
                   >
                     {call.triggered ? "Flagged" : "Clear"}
                   </span>
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(call.id); }}
+                    className="text-gray-600 hover:text-red-400 transition-colors text-lg leading-none"
+                    aria-label="Delete call"
+                    title="Delete this call"
+                  >
+                    ×
+                  </button>
                 </div>
               </summary>
 

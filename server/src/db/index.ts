@@ -144,6 +144,22 @@ export async function getCallHistoryByUserId(userId: string, limit = 50): Promis
   return r.rows as unknown as DbCallHistory[];
 }
 
+export async function deleteCallHistory(id: string, userId: string): Promise<boolean> {
+  const r = await db.execute({
+    sql: "DELETE FROM call_history WHERE id = ? AND user_id = ?",
+    args: [id, userId],
+  });
+  return (r.rowsAffected ?? 0) > 0;
+}
+
+export async function clearCallHistory(userId: string): Promise<number> {
+  const r = await db.execute({
+    sql: "DELETE FROM call_history WHERE user_id = ?",
+    args: [userId],
+  });
+  return r.rowsAffected ?? 0;
+}
+
 export async function createUser(
   email: string,
   passwordHash: string,

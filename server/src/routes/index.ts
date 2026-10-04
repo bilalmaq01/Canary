@@ -55,6 +55,26 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     );
   });
 
+  // DELETE /api/call-history/:id — delete one past call (own rows only)
+  app.delete("/api/call-history/:id", async (req, reply) => {
+    const user = await getUserFromRequest(req);
+    if (!user) return reply.status(401).send({ error: "Unauthorized" });
+    const { id } = req.params as { id: string };
+    const { deleteCallHistory } = await import("../db/index.js");
+    const ok = await deleteCallHistory(id, user.id);
+    if (!ok) return reply.status(404).send({ error: "Not found" });
+    return reply.send({ ok: true });
+  });
+
+  // DELETE /api/call-history — clear all of the user's call history
+  app.delete("/api/call-history", async (req, reply) => {
+    const user = await getUserFromRequest(req);
+    if (!user) return reply.status(401).send({ error: "Unauthorized" });
+    const { clearCallHistory } = await import("../db/index.js");
+    const deleted = await clearCallHistory(user.id);
+    return reply.send({ ok: true, deleted });
+  });
+
   // GET /api/session/active — returns the most recent non-ended session (for live call auto-connect)
   app.get("/api/session/active", async (_req, reply) => {
     const session = getLatestActiveSession();
