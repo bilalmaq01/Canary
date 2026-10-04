@@ -109,8 +109,9 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     return reply.send({ ok: true });
   });
 
-  // GET /c/:token — contact page data
-  app.get("/c/:token", async (req, reply) => {
+  // GET /api/c/:token — contact page data (the page itself is served by the SPA
+  // at /c/:token; the data must live under /api so it doesn't shadow that route).
+  app.get("/api/c/:token", async (req, reply) => {
     const { token } = req.params as { token: string };
     const session = getSessionByToken(token);
     if (!session || session.state === "ended") {
@@ -125,8 +126,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     });
   });
 
-  // POST /c/:token/action — contact page action
-  app.post("/c/:token/action", async (req, reply) => {
+  // POST /api/c/:token/action — contact page action
+  app.post("/api/c/:token/action", async (req, reply) => {
     const { token } = req.params as { token: string };
     const session = getSessionByToken(token);
     if (!session || session.state === "ended") {
@@ -153,8 +154,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     return reply.send({ ok: true });
   });
 
-  // POST /c/:token/optin — trusted contact opts in to SMS alerts
-  app.post("/c/:token/optin", async (req, reply) => {
+  // POST /api/c/:token/optin — trusted contact opts in to SMS alerts
+  app.post("/api/c/:token/optin", async (req, reply) => {
     const { token } = req.params as { token: string };
     const session = getSessionByToken(token);
     if (!session || session.state === "ended") {

@@ -21,7 +21,7 @@ export default function ContactPage({ token }: ContactPageProps) {
   const [optInError, setOptInError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/c/${token}`)
+    fetch(`/api/c/${token}`)
       .then(async (res) => {
         if (res.status === 404) {
           setPageState("expired");
@@ -36,7 +36,7 @@ export default function ContactPage({ token }: ContactPageProps) {
 
   const sendAction = async (action: "end" | "review") => {
     setPageState("sent");
-    await fetch(`/c/${token}/action`, {
+    await fetch(`/api/c/${token}/action`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
@@ -48,7 +48,7 @@ export default function ContactPage({ token }: ContactPageProps) {
     setOptInState("submitting");
     setOptInError(null);
     try {
-      const res = await fetch(`/c/${token}/optin`, {
+      const res = await fetch(`/api/c/${token}/optin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
