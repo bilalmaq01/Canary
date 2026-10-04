@@ -7,6 +7,40 @@ This plan merges four plans: `plan.md` (our decision thread), the two uploaded `
 
 ---
 
+## STATUS (as of 2026-10-03)
+
+### ✅ Done
+- **Tier 0** — Scripted replay, rules engine (high-risk + score path), dashboard, ElevenLabs warning clips, trusted contact QR + contact page, benign replay
+- **Tier 1** — Live Twilio conference call with Deepgram STT, same engine/events as replay
+- **2a Gemini Flash** — Analyzes last 10 lines with engine context (score + categories); confidence ≥ 0.70 triggers; `quotedLine` field in output
+- **2b VoIP badge** — Twilio Lookup v2 line type; display-only chip on dashboard
+- **2d ElevenLabs agent** — Code wired: after warning, dials `ELEVENLABS_AGENT_NUMBER` into the conference if env var is set
+- **74-scenario fixture suite** — All 89 tests pass (15 original + 74 real-world scenarios)
+- **Email scanner** (`/email`) — Gmail IMAP, domain-mismatch detection (24 brands), 7-category rules engine, Gemini email analysis, full UI page with risk sorting and flag chips
+- **Mobile-responsive UI** — Dashboard and email page work on phones
+
+### ❌ Still needed / at-risk
+| Item | What's missing | Notes |
+|---|---|---|
+| **2c SMS to trusted contact** | A2P 10DLC registration approval | Must have been started at hour 0. If approved, wire `TWILIO_PHONE_NUMBER` → send SMS with `/c/:token` link on trigger |
+| **Twilio signature validation** | `validateExpressRequest` or equivalent check on `POST /twilio/voice` and `/twilio/status` | Security gate from hour 8–12 schedule; not yet verified present |
+| **`ELEVENLABS_AGENT_NUMBER` env var** | Set in Railway to a real ElevenLabs agent phone number | Code is done; just needs the number provisioned in ElevenLabs |
+| **Verification checklist** (section 10) | Full manual run-through before freeze | See checklist below |
+
+### 🔲 Verification checklist (run before freeze)
+- [ ] Gift-card script fires exactly once on line 3 via high-risk path; `warning-gift-card.mp3` plays
+- [ ] Remote-access and login-code fixtures each fire once with their own clip
+- [ ] Score-path fixture fires at ≥ 55 with ≥ 2 categories (threshold was lowered from plan's 70/3)
+- [ ] Appointment, birthday, past-scam, download-app, warrant-mention, bare-code fixtures don't fire
+- [ ] Interim text doesn't change the score; repeated line doesn't double-award
+- [ ] `intervened` flag blocks a second warning; double contact tap plays clip once
+- [ ] Token for one call can't open another; expires when session ends
+- [ ] Gemini down/timing out leaves rules fully working
+- [ ] Live call: MP3 plays on both phones via conference announce
+- [ ] VoIP badge shows on dashboard for a VoIP caller
+
+---
+
 ## 1. Pitch in one line
 
 **Detect → warn out loud → bring in someone you trust.** Scam Call Shield listens to a call routed through our number. When the caller makes a scam-style demand, it speaks an ElevenLabs warning into the call and lets a trusted family member weigh in from their phone.

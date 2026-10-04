@@ -31,6 +31,14 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
     const session = createSession();
     const callerNumber = (req.body as any).From as string;
 
+    // Assign to the account owner so DB trusted contacts are included in SMS alerts
+    const { queries } = await import("../db/index.js");
+    const owner = queries.getFirstUser.get();
+    if (owner) {
+      session.userId = owner.id;
+      session.contactUrl = `${BASE_URL}/c/${session.contactToken}`;
+    }
+
     // TwiML: start media stream (caller audio only) + join conference
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>

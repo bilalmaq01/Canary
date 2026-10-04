@@ -1,7 +1,48 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useSession } from "./useSession";
 import type { SessionState, Category } from "./types";
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  protectedPhone: string | null;
+}
+
+interface Contact {
+  id: string;
+  name: string;
+  phone: string;
+}
+
+function useContacts() {
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/contacts")
+      .then(async (r) => { if (r.ok) setContacts((await r.json()) as Contact[]); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const add = async (name: string, phone: string) => {
+    const res = await fetch("/api/contacts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, phone }),
+    });
+    if (res.ok) setContacts((c) => [(await res.json()) as Contact, ...c]);
+  };
+
+  const remove = async (id: string) => {
+    await fetch(`/api/contacts/${id}`, { method: "DELETE" });
+    setContacts((c) => c.filter((x) => x.id !== id));
+  };
+
+  return { contacts, loading, add, remove };
+}
 
 const CATEGORY_ICONS: Record<string, string> = {
   payment: "💳",
@@ -72,10 +113,19 @@ function categoryLabel(cat: Category): string {
   }
 }
 
-export default function Dashboard() {
+interface DashboardProps {
+  user: User;
+  onLogout: () => void;
+}
+
+export default function Dashboard({ user, onLogout }: DashboardProps) {
   const { data, scoreFlash, startSession, reset } = useSession();
+  const { contacts, add: addContact, remove: removeContact } = useContacts();
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const prevCatLengthRef = useRef<number>(0);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [addingContact, setAddingContact] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -85,23 +135,46 @@ export default function Dashboard() {
   const prevCatLength = prevCatLengthRef.current;
   prevCatLengthRef.current = data.categoriesAwarded.length;
 
+  const submitContact = async () => {
+    if (!newName.trim() || !newPhone.trim()) return;
+    setAddingContact(true);
+    await addContact(newName.trim(), newPhone.trim());
+    setNewName("");
+    setNewPhone("");
+    setAddingContact(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+      <header className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-800">
         <div className="flex flex-col leading-tight">
           <span className="text-lg font-bold tracking-tight">🐦 Canary AI</span>
-          <span className="text-xs text-yellow-500/70 tracking-wide">the canary in your phone line</span>
+          <span className="text-xs text-yellow-500/70 tracking-wide hidden sm:block">the canary in your phone line</span>
         </div>
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 sm:gap-3 text-sm">
+          <a
+            href="/email"
+            className="px-2.5 sm:px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition-colors text-xs font-medium"
+          >
+            📧 <span className="hidden sm:inline">Email Scanner</span><span className="sm:hidden">Email</span>
+          </a>
           <span
-            className={`w-2 h-2 rounded-full ${data.wsConnected ? "bg-green-500" : "bg-gray-500"}`}
+            className={`w-2 h-2 rounded-full shrink-0 ${data.wsConnected ? "bg-green-500" : "bg-gray-500"}`}
           />
-          <span className="text-gray-400">{data.wsConnected ? "Connected" : "Disconnected"}</span>
+          <span className="text-gray-400 hidden sm:block">{data.wsConnected ? "Connected" : "Disconnected"}</span>
+          <span className="text-gray-600 hidden sm:block">·</span>
+          <span className="text-gray-500 hidden sm:block text-xs">{user.name}</span>
+          <button
+            onClick={onLogout}
+            className="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors text-xs"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
-      <main className="flex-1 p-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <main className="flex-1 p-4 sm:p-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <div className="flex flex-col gap-4">
             <div className="bg-gray-900 rounded-xl p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
@@ -151,11 +224,11 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               {sessionActive ? (
                 <button
                   onClick={reset}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                  className="flex-1 sm:flex-none px-4 py-2.5 sm:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
                 >
                   Reset
                 </button>
@@ -163,15 +236,15 @@ export default function Dashboard() {
                 <>
                   <button
                     onClick={() => void startSession("gift-card-scam")}
-                    className="px-4 py-2 bg-red-700 hover:bg-red-600 rounded-lg text-sm font-medium transition-colors"
+                    className="flex-1 sm:flex-none px-4 py-2.5 sm:py-2 bg-red-700 hover:bg-red-600 rounded-lg text-sm font-medium transition-colors"
                   >
                     Run scam call
                   </button>
                   <button
                     onClick={() => void startSession("appointment")}
-                    className="px-4 py-2 bg-blue-700 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors"
+                    className="flex-1 sm:flex-none px-4 py-2.5 sm:py-2 bg-blue-700 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors"
                   >
-                    Run appointment call
+                    Run appointment
                   </button>
                 </>
               )}
@@ -244,9 +317,70 @@ export default function Dashboard() {
             {data.contactUrl !== null && (
               <div className="bg-gray-900 rounded-xl p-4 flex flex-col items-center gap-3">
                 <p className="text-sm text-gray-400">Scan for trusted contact</p>
-                <QRCodeSVG value={data.contactUrl} size={160} bgColor="#111827" fgColor="#ffffff" />
+                <QRCodeSVG value={data.contactUrl} size={140} bgColor="#111827" fgColor="#ffffff" />
+                <p className="text-xs text-gray-600 break-all text-center">{data.contactUrl}</p>
               </div>
             )}
+
+            {/* Trusted Contacts */}
+            <div className="bg-gray-900 rounded-xl p-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-gray-100 text-sm">
+                  Trusted Contacts
+                  {contacts.length > 0 && (
+                    <span className="ml-2 text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded-full">
+                      {contacts.length}
+                    </span>
+                  )}
+                </h2>
+              </div>
+
+              {contacts.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  {contacts.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between bg-gray-800 rounded-lg px-3 py-2">
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm text-white truncate">{c.name}</span>
+                        <span className="text-xs text-gray-500">{c.phone}</span>
+                      </div>
+                      <button
+                        onClick={() => void removeContact(c.id)}
+                        className="ml-2 text-gray-600 hover:text-red-400 transition-colors text-lg leading-none shrink-0"
+                        aria-label="Remove"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500"
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") void submitContact(); }}
+                  className="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500"
+                />
+                <button
+                  onClick={() => void submitContact()}
+                  disabled={addingContact || !newName.trim() || !newPhone.trim()}
+                  className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-700 disabled:text-gray-600 rounded-lg text-xs font-medium transition-colors shrink-0"
+                >
+                  Add
+                </button>
+              </div>
+              <p className="text-xs text-gray-600">These contacts get an SMS alert when a scam is detected.</p>
+            </div>
 
             {data.contactRecommendation !== null && (
               <div

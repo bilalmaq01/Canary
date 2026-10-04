@@ -102,7 +102,7 @@ export default function EmailPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+      <header className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-800">
         <div className="flex flex-col leading-tight">
           <span className="text-lg font-bold tracking-tight">🐦 Canary AI</span>
           <span className="text-xs text-yellow-500/70 tracking-wide">email scam scanner</span>
@@ -112,7 +112,7 @@ export default function EmailPage() {
         </a>
       </header>
 
-      <main className="flex-1 p-6 max-w-5xl mx-auto w-full">
+      <main className="flex-1 p-4 sm:p-6 max-w-5xl mx-auto w-full">
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="font-semibold text-gray-100 mb-1">Scan Your Inbox</h2>
           <p className="text-xs text-gray-500 mb-4">

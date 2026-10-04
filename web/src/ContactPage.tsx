@@ -10,10 +10,15 @@ interface ContactData {
 }
 
 type PageState = "loading" | "expired" | "ready" | "sent";
+type OptInState = "idle" | "submitting" | "done" | "error";
 
 export default function ContactPage({ token }: ContactPageProps) {
   const [pageState, setPageState] = useState<PageState>("loading");
   const [evidence, setEvidence] = useState<Evidence | null>(null);
+  const [phone, setPhone] = useState("");
+  const [consented, setConsented] = useState(false);
+  const [optInState, setOptInState] = useState<OptInState>("idle");
+  const [optInError, setOptInError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/c/${token}`)
@@ -22,7 +27,7 @@ export default function ContactPage({ token }: ContactPageProps) {
           setPageState("expired");
           return;
         }
-        const body = await res.json() as ContactData;
+        const body = (await res.json()) as ContactData;
         setEvidence(body.evidence ?? null);
         setPageState("ready");
       })
@@ -36,6 +41,29 @@ export default function ContactPage({ token }: ContactPageProps) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
     });
+  };
+
+  const submitOptIn = async () => {
+    if (!phone || !consented) return;
+    setOptInState("submitting");
+    setOptInError(null);
+    try {
+      const res = await fetch(`/c/${token}/optin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      if (res.ok) {
+        setOptInState("done");
+      } else {
+        const data = (await res.json()) as { error?: string };
+        setOptInError(data.error ?? "Failed to opt in");
+        setOptInState("error");
+      }
+    } catch {
+      setOptInError("Could not connect");
+      setOptInState("error");
+    }
   };
 
   if (pageState === "loading") {
@@ -70,7 +98,7 @@ export default function ContactPage({ token }: ContactPageProps) {
         )}
 
         <p className="text-sm text-gray-400 text-center">
-          This is advice from someone you trust, not identity verification.
+          Your answer is advice, not identity verification.
         </p>
 
         {pageState === "ready" ? (
@@ -91,6 +119,51 @@ export default function ContactPage({ token }: ContactPageProps) {
         ) : (
           <p className="text-green-400 text-lg font-medium">Your response has been sent.</p>
         )}
+
+        {/* SMS opt-in */}
+        <div className="w-full border-t border-gray-800 pt-5 flex flex-col gap-3">
+          {optInState === "done" ? (
+            <p className="text-green-400 text-sm text-center font-medium">
+              ✓ You'll get a text alert if a scam is detected and you're not on this page.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-gray-400 text-center">
+                Get a text alert if you leave this page and a scam is detected.
+              </p>
+              <input
+                type="tel"
+                placeholder="Your phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
+              />
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consented}
+                  onChange={(e) => setConsented(e.target.checked)}
+                  className="mt-0.5 accent-yellow-500 shrink-0"
+                />
+                <span className="text-xs text-gray-400 leading-relaxed">
+                  I agree to receive one SMS alert from Canary AI if a scam is detected.
+                  Msg & data rates may apply. Reply STOP to opt out.{" "}
+                  <a href="/privacy" className="underline text-gray-500 hover:text-gray-300">
+                    Privacy policy
+                  </a>
+                </span>
+              </label>
+              {optInError && <p className="text-xs text-red-400">{optInError}</p>}
+              <button
+                onClick={() => void submitOptIn()}
+                disabled={!phone || !consented || optInState === "submitting"}
+                className="w-full py-2.5 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 rounded-lg text-sm font-medium transition-colors"
+              >
+                {optInState === "submitting" ? "Saving..." : "Enable text alerts"}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

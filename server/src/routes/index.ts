@@ -7,13 +7,23 @@ import { intervene } from "../intervention.js";
 import type { ClipId, Evidence } from "../events.js";
 import { registerTwilioRoutes } from "./twilio.js";
 import { registerEmailRoutes } from "./email.js";
+import { registerAuthRoutes, getUserFromRequest } from "./auth.js";
+import { registerContactRoutes } from "./contacts.js";
+import { queries } from "../db/index.js";
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
-  // POST /api/session — create a new session
-  app.post("/api/session", async (_req, reply) => {
+  await registerAuthRoutes(app);
+  await registerContactRoutes(app);
+
+  // POST /api/session — create a new session (requires auth)
+  app.post("/api/session", async (req, reply) => {
+    const user = getUserFromRequest(req);
+    if (!user) return reply.status(401).send({ error: "Unauthorized" });
     const session = createSession();
     const baseUrl = process.env.BASE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
     const contactUrl = `${baseUrl}/c/${session.contactToken}`;
+    session.contactUrl = contactUrl;
+    session.userId = user.id;
     return reply.send({
       sessionId: session.id,
       contactToken: session.contactToken,
@@ -116,6 +126,23 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
     publish(session.id, { type: "contact_action", recommendation: action });
 
+    return reply.send({ ok: true });
+  });
+
+  // POST /c/:token/optin — trusted contact opts in to SMS alerts
+  app.post("/c/:token/optin", async (req, reply) => {
+    const { token } = req.params as { token: string };
+    const session = getSessionByToken(token);
+    if (!session || session.state === "ended") {
+      return reply.status(404).send({ error: "Not found" });
+    }
+    const { phone } = req.body as { phone: string };
+    if (!phone || !/^\+?[\d\s\-().]{7,15}$/.test(phone.trim())) {
+      return reply.status(400).send({ error: "Invalid phone number" });
+    }
+    // Normalise to E.164-ish — strip spaces/dashes/parens, ensure leading +
+    const normalised = phone.replace(/[\s\-().]/g, "");
+    session.trustedContactPhone = normalised.startsWith("+") ? normalised : `+1${normalised}`;
     return reply.send({ ok: true });
   });
 

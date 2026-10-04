@@ -45,6 +45,9 @@ export interface Session {
   contactRecommendation?: "end" | "review";
   startedAt: Date;
   lineType?: string;
+  trustedContactPhone?: string;
+  contactUrl?: string;
+  userId?: string;
 }
 
 export interface CallSource {
