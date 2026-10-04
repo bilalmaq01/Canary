@@ -33,7 +33,7 @@ function useContacts() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, phone }),
     });
-    if (res.ok) setContacts((c) => [(await res.json()) as Contact, ...c]);
+    if (res.ok) { const contact = (await res.json()) as Contact; setContacts((c) => [contact, ...c]); }
   };
 
   const remove = async (id: string) => {
