@@ -7,16 +7,19 @@
   "dependencies": {
     "@deepgram/sdk": "^3",
     "@fastify/cors": "^8",
-"@fastify/static": "^6",
+    "@fastify/static": "^6",
     "@fastify/websocket": "^8",
     "@google/generative-ai": "^0.21.0",
     "dotenv": "^16",
     "fastify": "^4",
+    "imapflow": "^2.2.4",
+    "mailparser": "^3.9.34",
     "nanoid": "^3",
     "qrcode": "^1.5",
     "twilio": "^4"
   },
   "devDependencies": {
+    "@types/mailparser": "^3.9.0",
     "@types/node": "^20",
     "@types/qrcode": "^1",
     "tsx": "^4",
