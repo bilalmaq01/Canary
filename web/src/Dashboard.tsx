@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
 import { useSession } from "./useSession";
 import type { SessionState, Category } from "./types";
 
@@ -305,14 +304,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     {categoryLabel(data.evidence.category)}
                   </span>
                 )}
-              </div>
-            )}
-
-            {data.contactUrl !== null && (
-              <div className="bg-gray-900 rounded-xl p-4 flex flex-col items-center gap-3">
-                <p className="text-sm text-gray-400">Scan for trusted contact</p>
-                <QRCodeSVG value={data.contactUrl} size={140} bgColor="#111827" fgColor="#ffffff" />
-                <p className="text-xs text-gray-600 break-all text-center">{data.contactUrl}</p>
               </div>
             )}
 
