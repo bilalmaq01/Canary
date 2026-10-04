@@ -37,6 +37,77 @@ function containsAnyWord(haystack: string, needles: string[]): boolean {
   return needles.some((n) => containsWord(haystack, n));
 }
 
+// Benign gift-card context — a gift-giving occasion, or the speaker expressing
+// their own wish ("I'm hoping to get some gift cards") rather than directing the
+// listener to go buy and hand them over. A scammer demands; a relative asks.
+// NOTE: this never exempts a request to READ codes/numbers off a card, which is
+// the one gift-card signal that is never legitimate.
+const GIFT_OCCASION = [
+  "birthday", "present", "gift for", "anniversary", "holiday gift",
+  "christmas", "graduation", "wedding",
+];
+const FIRST_PERSON_WISH = [
+  "i'm hoping", "i am hoping", "i was hoping", "i'd like", "i would like",
+  "i'd love", "i would love", "can i get", "could i get",
+];
+function isBenignGiftContext(text: string): boolean {
+  return containsAny(text, GIFT_OCCASION) || containsAny(text, FIRST_PERSON_WISH);
+}
+
+// Meta / educational / negation context — the caller is discussing scams in the
+// abstract or warning against them ("scammers often ask you to read gift card
+// codes", "we'll never ask for your password"), not making a live demand.
+const META_CUES = [
+  "scammer", "scammers", "is a scam", "a common scam", "fraud awareness",
+  "awareness class", "awareness session", "warn you about", "warns against",
+  "warning you about", "never give out", "never share your", "never read out",
+  "never tell anyone", "we'll never ask", "we will never ask", "is a secret",
+  "keep your password", "keep your passwords", "report suspicious", "phishing",
+];
+function isMetaContext(text: string): boolean {
+  return containsAny(text, META_CUES);
+}
+
+// Brand-agnostic stored-value instrument: a gift/prepaid card, or any branded
+// card/voucher. Deliberately excludes a bare "card" — a credit/debit card is not
+// a stored-value instrument ("the number on the back of your card" is benign).
+const STORED_VALUE_RE =
+  /\b(gift|prepaid|apple|itunes|google play|google|steam|amazon|xbox|playstation|nintendo|visa|mastercard|vanilla|green dot|moneypak|target|walmart|best buy|ebay|razer|sephora|nordstrom|netflix)\s+(cards?|vouchers?)\b/;
+function hasStoredValueCard(text: string): boolean {
+  return (
+    STORED_VALUE_RE.test(text) ||
+    /\bgift\s+cards?\b/.test(text) ||
+    /\bprepaid\s+(cards?|vouchers?)\b/.test(text)
+  );
+}
+
+// Handing a secret token to the caller — a listener-directed verb plus a token.
+// Reading codes/PINs/digits off to a caller is never legitimate.
+const HANDOVER_VERBS = [
+  "read me", "read back", "read out", "read it back", "read the", "give me",
+  "tell me", "send me", "send over", "text me", "ping me", "share the",
+  "share your", "provide the", "provide your", "type the", "enter the",
+  "confirm the", "confirm your", "spell out", "what's the", "what is the",
+];
+const STRONG_TOKENS = [
+  "code", "codes", "pin", "digit", "digits", "passcode", "otp",
+  "one time code", "one-time code", "verification code", "security code",
+  "authentication code", "two-factor", "login code", "recovery phrase",
+  "seed phrase", "redemption", "last four", "last 4", "password", "bank login",
+];
+function hasCodeExtraction(text: string): boolean {
+  if (containsAny(text, HANDOVER_VERBS) && containsAnyWord(text, STRONG_TOKENS)) return true;
+  // "number(s)"/"serial" only count as a secret in a stored-value-card context.
+  if (
+    hasStoredValueCard(text) &&
+    containsAny(text, HANDOVER_VERBS) &&
+    containsAnyWord(text, ["number", "numbers", "serial"])
+  ) {
+    return true;
+  }
+  return false;
+}
+
 // ── high-risk path ────────────────────────────────────────────────────────────
 
 function checkHighRisk(
@@ -44,6 +115,9 @@ function checkHighRisk(
   currentLine: string,
   recentLines: string[]
 ): { clipId: ClipId; category: Category; quotedLine: string } | null {
+  // Educational / meta / negation discussion is not a live demand.
+  if (isMetaContext(joinedRecent)) return null;
+
   // Trigger 1 — gift-card / prepaid card demand
   const hasCardType = containsAny(joinedRecent, [
     "gift card", "gift cards", "itunes", "google play", "amazon gift",
@@ -65,28 +139,35 @@ function checkHighRisk(
   })();
 
   if (hasCardType && !isThirdPerson) {
-    // 1a — code/number demand (broad verb list)
+    // 1a — code/number demand (broad verb list). Reading the codes/numbers off a
+    // card is never legitimate, so this fires even in a gift-giving context.
     if (
       containsAny(joinedRecent, ["read", "give me", "tell me", "provide", "send me", "send", "share", "type", "scratch", "text me", "read back"]) &&
       containsAny(joinedRecent, ["code", "codes", "number", "numbers", "back", "pin", "serial", "digit"])
     ) {
       return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
     }
-    // 1b — explicit buy/pay demand for gift cards
-    if (
-      containsAny(joinedRecent, [
-        "buy gift card", "buy itunes", "buy google play", "buy steam", "buy amazon gift",
-        "get gift card", "get itunes", "pick up gift card", "go buy gift card",
-        "purchase gift card", "pay with gift card", "pay using gift card",
-        "pay in gift card", "payment in gift card", "payment with gift card",
-        "send gift card", "need gift card",
-      ])
-    ) {
-      return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
-    }
-    // 1c — any payment action + gift card type (catches "buy a few gift cards", "pay [amount] with gift cards")
-    if (containsAny(joinedRecent, ["buy", "pay", "get", "pick up", "purchase", "send", "need", "want"])) {
-      return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
+
+    // 1b/1c only fire as a *demand to buy* — suppressed when the gift cards are
+    // framed as a gift or the speaker's own wish (e.g. "it's my birthday, I'm
+    // hoping to get some gift cards").
+    if (!isBenignGiftContext(joinedRecent)) {
+      // 1b — explicit buy/pay demand for gift cards
+      if (
+        containsAny(joinedRecent, [
+          "buy gift card", "buy itunes", "buy google play", "buy steam", "buy amazon gift",
+          "get gift card", "get itunes", "pick up gift card", "go buy gift card",
+          "purchase gift card", "pay with gift card", "pay using gift card",
+          "pay in gift card", "payment in gift card", "payment with gift card",
+          "send gift card", "need gift card",
+        ])
+      ) {
+        return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
+      }
+      // 1c — any payment action + gift card type (catches "buy a few gift cards", "pay [amount] with gift cards")
+      if (containsAny(joinedRecent, ["buy", "pay", "get", "pick up", "purchase", "send", "need", "want"])) {
+        return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
+      }
     }
   }
 
@@ -155,8 +236,9 @@ function checkHighRisk(
   // Trigger 6 — arrest/warrant threat
   if (
     containsAny(joinedRecent, [
-      "warrant for your arrest", "arrest warrant", "issued a warrant",
+      "warrant for your arrest", "arrest warrant", "issued a warrant", "bench warrant",
       "police will arrest", "officers will come", "law enforcement will",
+      "send a unit", "send officers", "send a deputy", "send the police", "send a squad",
     ])
   ) {
     return { clipId: "warning-score", category: "urgency", quotedLine: currentLine };
@@ -175,13 +257,65 @@ function checkHighRisk(
     return { clipId: "warning-score", category: "authority", quotedLine: currentLine };
   }
 
+  // ── Compositional generalization (brand- and verb-agnostic) ──────────────────
+  // Catches real-world paraphrases the literal lists above miss: "apple cards",
+  // "steam vouchers", "ping me the digits", "send over the passcode", etc.
+  if (!isThirdPerson) {
+    // Handing any secret token to the caller is never legitimate — fires even in
+    // a gift context (reading codes off a birthday card is still theft).
+    if (hasCodeExtraction(joinedRecent)) {
+      const card = hasStoredValueCard(joinedRecent);
+      return {
+        clipId: card ? "warning-gift-card" : "warning-login-code",
+        category: card ? "payment" : "access",
+        quotedLine: currentLine,
+      };
+    }
+
+    // A stored-value card framed as a payment demand (not a gift or a wish).
+    if (
+      hasStoredValueCard(joinedRecent) &&
+      !isBenignGiftContext(joinedRecent) &&
+      containsAny(joinedRecent, [
+        "buy", "pay", "get", "pick up", "purchase", "send", "need", "want",
+        "load", "put money on", "grab", "go get", "go buy",
+      ])
+    ) {
+      return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
+    }
+
+    // "Safe account" bank-impersonation: move funds to an account the caller
+    // controls. No legitimate caller ever directs this.
+    if (
+      containsAny(joinedRecent, ["safe account", "secure account", "protected account", "safety account"]) &&
+      containsAny(joinedRecent, ["move", "transfer", "wire", "send", "put", "deposit", "shift"])
+    ) {
+      return { clipId: "warning-score", category: "payment", quotedLine: currentLine };
+    }
+
+    // Remote-access takeover paired with a threat/consequence.
+    if (
+      containsAny(joinedRecent, [
+        "take over your screen", "take over the screen", "remote in",
+        "let me in to your", "get into your computer", "into your device",
+        "connect to your computer", "take over your computer",
+      ]) &&
+      containsAny(joinedRecent, [
+        "lose your files", "lose everything", "delete your files", "wipe",
+        "will be encrypted", "or you lose", "or the charge", "or we", "unless you",
+      ])
+    ) {
+      return { clipId: "warning-remote-access", category: "access", quotedLine: currentLine };
+    }
+  }
+
   return null;
 }
 
 // ── score path — category checks ─────────────────────────────────────────────
 
 function checkPayment(line: string): boolean {
-  if (containsAny(line, ["birthday", "present", "gift for", "anniversary", "holiday gift"])) return false;
+  if (isBenignGiftContext(line) || isMetaContext(line)) return false;
 
   const paymentMethods = [
     // Gift cards
@@ -250,6 +384,7 @@ function checkPayment(line: string): boolean {
 
 function checkAccess(line: string): boolean {
   if (contains(line, "download this app so we can talk")) return false;
+  if (isMetaContext(line)) return false;
   const accessMethods = [
     "remote access", "screen control", "screen share", "screen sharing",
     "teamviewer", "anydesk", "logmein", "chrome remote", "remote desktop",
