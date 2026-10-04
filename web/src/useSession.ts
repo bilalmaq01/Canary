@@ -44,8 +44,15 @@ export function useSession() {
     const ws = new WebSocket(`${wsProto}//${window.location.host}/ws/${sessionId}`);
     wsRef.current = ws;
 
-    ws.onopen = () => setData((d) => ({ ...d, sessionId, contactUrl, wsConnected: true, sessionType: type }));
-    ws.onclose = () => setData((d) => ({ ...d, wsConnected: false }));
+    let opened = false;
+    ws.onopen = () => {
+      opened = true;
+      setData((d) => ({ ...d, sessionId, contactUrl, wsConnected: true, sessionType: type }));
+    };
+    ws.onclose = () => {
+      setData((d) => ({ ...d, wsConnected: false }));
+      if (!opened) isStartingRef.current = false;
+    };
 
     ws.onmessage = (e) => {
       const event: ServerEvent = JSON.parse(e.data as string) as ServerEvent;
