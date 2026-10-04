@@ -26,6 +26,17 @@ function containsAny(haystack: string, needles: string[]): boolean {
   return needles.some((n) => haystack.includes(n));
 }
 
+// Word-boundary match — prevents short needles from matching inside larger words
+// (e.g. "now" must not match inside "know", "or" must not match inside "order").
+function containsWord(haystack: string, needle: string): boolean {
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escaped}\\b`).test(haystack);
+}
+
+function containsAnyWord(haystack: string, needles: string[]): boolean {
+  return needles.some((n) => containsWord(haystack, n));
+}
+
 // ── high-risk path ────────────────────────────────────────────────────────────
 
 function checkHighRisk(
@@ -332,10 +343,19 @@ function checkAuthority(line: string, previousLine: string | undefined): boolean
     containsAny(previousLine, authClaims) && containsAny(previousLine, authorityOrgs);
 
   if (lineHasAuth) {
-    if (containsAny(line, demandWords)) return true;
-    if (previousLine !== undefined && containsAny(previousLine, demandWords)) return true;
+    if (containsAnyWord(line, demandWords)) return true;
+    if (previousLine !== undefined && containsAnyWord(previousLine, demandWords)) return true;
   }
-  if (prevHasAuth && containsAny(line, demandWords)) return true;
+  if (prevHasAuth && containsAnyWord(line, demandWords)) return true;
+
+  // Tech-support impersonation: an authority/tech-company claim paired with a
+  // device-problem claim (often split across two lines in a live transcript).
+  const deviceProblemClaims = [
+    "virus on your computer", "virus on your", "computer has a virus",
+    "your computer is infected", "computer is infected", "device is infected",
+    "malware on your", "infected with a virus", "has been hacked",
+  ];
+  if (containsAny(line, deviceProblemClaims) && (lineHasAuth || prevHasAuth)) return true;
 
   // Standalone fraud-claim patterns — high signal on their own
   const fraudClaims = [
@@ -387,13 +407,13 @@ function checkUrgency(line: string): boolean {
     "hacker", "hackers", "being hacked", "being compromised",
   ];
   const urgencyConsequences = [
-    "must", "have to", "need to", " or", "otherwise", "unless",
+    "must", "have to", "need to", "or", "otherwise", "unless",
     "will be", "going to be", "could be", "may be", "might be",
     "failure to", "if you do not", "if you don't", "we will", "they will",
     "you will", "you could", "you may",
     "we need", "to keep", "to avoid", "to prevent",
   ];
-  return containsAny(line, urgencyTriggers) && containsAny(line, urgencyConsequences);
+  return containsAnyWord(line, urgencyTriggers) && containsAnyWord(line, urgencyConsequences);
 }
 
 // ── engine factory ────────────────────────────────────────────────────────────
