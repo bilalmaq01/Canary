@@ -1,6 +1,7 @@
 import twilio from "twilio";
 import { publish } from "./bus.js";
 import { getContactsByUserId } from "./db/index.js";
+import type { DbContact } from "./db/index.js";
 import type { Session, ClipId, TriggerPath, Evidence } from "./events.js";
 
 export async function intervene(
@@ -41,7 +42,7 @@ async function sendSmsAlert(session: Session, evidence: Evidence): Promise<void>
   // Collect recipients: saved DB contacts + any QR opt-in
   const phones: string[] = [];
   if (session.userId) {
-    const dbContacts = getContactsByUserId(session.userId);
+    const dbContacts: DbContact[] = await getContactsByUserId(session.userId);
     phones.push(...dbContacts.map((c) => c.phone));
   }
   if (session.trustedContactPhone && !phones.includes(session.trustedContactPhone)) {

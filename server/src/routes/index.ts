@@ -9,7 +9,6 @@ import { registerTwilioRoutes } from "./twilio.js";
 import { registerEmailRoutes } from "./email.js";
 import { registerAuthRoutes, getUserFromRequest } from "./auth.js";
 import { registerContactRoutes } from "./contacts.js";
-import { queries } from "../db/index.js";
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await registerAuthRoutes(app);
@@ -17,7 +16,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
   // POST /api/session — create a new session (requires auth)
   app.post("/api/session", async (req, reply) => {
-    const user = getUserFromRequest(req);
+    const user = await getUserFromRequest(req);
     if (!user) return reply.status(401).send({ error: "Unauthorized" });
     const session = createSession();
     const baseUrl = process.env.BASE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;

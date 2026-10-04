@@ -8,7 +8,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { existsSync } from "fs";
 import { registerRoutes } from "./routes/index.js";
-import { seedAdminIfNeeded } from "./db/index.js";
+import { initDb, seedAdminIfNeeded } from "./db/index.js";
 
 // Works whether run via `node server/dist/index.js` or `tsx src/index.ts`
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -16,6 +16,7 @@ const projectRoot = join(__dirname, "../..");
 const webDist = join(projectRoot, "web/dist");
 const assetsDir = join(projectRoot, "audio");
 
+await initDb();
 await seedAdminIfNeeded();
 
 const app = Fastify({ logger: true });

@@ -11,8 +11,8 @@
     "@fastify/static": "^6",
     "@fastify/websocket": "^8",
     "@google/generative-ai": "^0.21.0",
+    "@libsql/client": "^0.18.0",
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^13.0.3",
     "dotenv": "^16",
     "fastify": "^4",
     "imapflow": "^2.2.4",
@@ -24,7 +24,6 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mailparser": "^3.9.0",
     "@types/node": "^20",

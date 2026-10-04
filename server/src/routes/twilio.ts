@@ -32,8 +32,8 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
     const callerNumber = (req.body as any).From as string;
 
     // Assign to the account owner so DB trusted contacts are included in SMS alerts
-    const { queries } = await import("../db/index.js");
-    const owner = queries.getFirstUser.get();
+    const { getFirstUser } = await import("../db/index.js");
+    const owner = await getFirstUser();
     if (owner) {
       session.userId = owner.id;
       session.contactUrl = `${BASE_URL}/c/${session.contactToken}`;
