@@ -66,6 +66,22 @@ export async function runReplay(
       await intervene(currentSession, result.clipId, result.triggerPath, result.evidence, playClip);
     }
 
+    // The engine may upgrade the quoted evidence to a more damning line that
+    // arrives after the initial trigger — sync it to the session and the UI.
+    if (
+      result.evidence &&
+      currentSession.evidence &&
+      currentSession.evidence.quotedLine !== result.evidence.quotedLine
+    ) {
+      currentSession.evidence = result.evidence;
+      publish(currentSession.id, {
+        type: "intervention",
+        clipId: result.clipId ?? "warning-score",
+        triggerPath: result.triggerPath ?? "high_risk",
+        evidence: result.evidence,
+      });
+    }
+
     // Gemini analyzes the full conversation context (non-blocking, primary decision-maker)
     const recentLines = currentSession.transcript.slice(-10).map((l) => l.text);
     void (async () => {

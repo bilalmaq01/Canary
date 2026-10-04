@@ -612,13 +612,42 @@ function checkUrgency(line: string): boolean {
   return containsAnyWord(line, urgencyTriggers) && containsAnyWord(line, urgencyConsequences);
 }
 
+// ── evidence severity ─────────────────────────────────────────────────────────
+
+// Ranks how damning a high-risk line is, so the quoted evidence can be upgraded
+// to the worst moment of the call rather than just the first phrase that tripped
+// the alarm. Reading codes/credentials aloud is the actual theft = most damning.
+function evidenceSeverity(
+  hr: { clipId: ClipId; category: Category; quotedLine: string },
+  joinedRecent: string,
+  line: string
+): number {
+  if (
+    hasCodeExtraction(joinedRecent) ||
+    containsAny(line, [
+      "read me", "read back", "read it back", "read it to me", "scratch",
+      "verification code", "one time code", "one-time code", "security code",
+      "recovery phrase", "seed phrase",
+    ])
+  ) return 5; // handing over codes / credentials
+  if (hr.clipId === "warning-remote-access") return 4; // remote takeover
+  if (hr.clipId === "warning-score" && hr.category === "urgency") return 4; // ransom / arrest threat
+  if (hr.category === "payment") return 3; // buy gift cards / wire / crypto
+  return 2; // authority impersonation / account-suspended, etc.
+}
+
 // ── engine factory ────────────────────────────────────────────────────────────
+
+// An instant high-risk trigger is maximum confidence; the displayed score should
+// reflect that (red zone) rather than whatever happened to accumulate first.
+const HIGH_RISK_SCORE_FLOOR = 80;
 
 export function createEngine(): Engine {
   let score = 0;
   let categoriesAwarded: Set<Category> = new Set();
   let recentLines: string[] = [];
   let intervened = false;
+  let evidenceSev = 0; // severity rank of the currently quoted evidence
   let lastResult: EngineResult = {
     score: 0,
     categoriesAwarded: [],
@@ -677,6 +706,15 @@ export function createEngine(): Engine {
       const highRisk = checkHighRisk(joinedRecent, text, recentLines);
       if (highRisk) {
         intervened = true;
+        // A high-risk phrase is maximum-confidence by definition. Credit its
+        // category and lift the score to a high-risk floor so a flagged call
+        // never shows a low "green" score that contradicts the Flagged badge.
+        if (!categoriesAwarded.has(highRisk.category)) {
+          categoriesAwarded.add(highRisk.category);
+          score += CATEGORY_POINTS[highRisk.category];
+        }
+        score = Math.max(score, HIGH_RISK_SCORE_FLOOR);
+        evidenceSev = evidenceSeverity(highRisk, joinedRecent, text);
         lastResult = {
           score,
           categoriesAwarded: Array.from(categoriesAwarded),
@@ -690,6 +728,21 @@ export function createEngine(): Engine {
           },
         };
         return snapshot();
+      }
+    } else if (lastResult.triggerPath === "high_risk") {
+      // Already flagged — but keep upgrading the quoted line to the most damning
+      // moment (e.g. the "read me the codes" line that follows "buy gift cards").
+      const hr = checkHighRisk(joinedRecent, text, recentLines);
+      if (hr) {
+        const sev = evidenceSeverity(hr, joinedRecent, text);
+        if (sev > evidenceSev) {
+          evidenceSev = sev;
+          lastResult.evidence = {
+            triggerPath: "high_risk",
+            category: hr.category,
+            quotedLine: hr.quotedLine,
+          };
+        }
       }
     }
 
@@ -750,6 +803,7 @@ export function createEngine(): Engine {
     categoriesAwarded = new Set();
     recentLines = [];
     intervened = false;
+    evidenceSev = 0;
     lastResult = {
       score: 0,
       categoriesAwarded: [],

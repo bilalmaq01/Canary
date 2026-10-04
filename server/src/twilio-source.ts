@@ -103,6 +103,22 @@ export function handleTwilioStream(
       void intervene(currentSession, result.clipId, result.triggerPath, result.evidence, playClip);
     }
 
+    // Upgrade the quoted evidence if a more damning line arrives after the
+    // initial flag (e.g. "read me the codes" following "buy gift cards").
+    if (
+      result.evidence &&
+      currentSession.evidence &&
+      currentSession.evidence.quotedLine !== result.evidence.quotedLine
+    ) {
+      currentSession.evidence = result.evidence;
+      publish(session.id, {
+        type: "intervention",
+        clipId: result.clipId ?? "warning-score",
+        triggerPath: result.triggerPath ?? "high_risk",
+        evidence: result.evidence,
+      });
+    }
+
     // Gemini analyzes full conversation context (non-blocking, primary decision-maker)
     const recentLines = currentSession.transcript.slice(-10).map((l) => l.text);
     void (async () => {
