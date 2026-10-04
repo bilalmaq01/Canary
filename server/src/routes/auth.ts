@@ -99,6 +99,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       email: user.email,
       name: user.name,
       protectedPhone: user.protected_phone,
+      canaryNumber: process.env.TWILIO_PHONE_NUMBER ?? null,
     });
   });
 }

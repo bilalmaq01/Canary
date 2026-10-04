@@ -7,6 +7,13 @@ interface User {
   email: string;
   name: string;
   protectedPhone: string | null;
+  canaryNumber: string | null;
+}
+
+// Format a US/E.164 number like +14155551234 → +1 (415) 555-1234; pass through anything else.
+function formatPhone(raw: string): string {
+  const m = raw.replace(/[^\d+]/g, "").match(/^\+?1?(\d{3})(\d{3})(\d{4})$/);
+  return m ? `+1 (${m[1]}) ${m[2]}-${m[3]}` : raw;
 }
 
 interface Contact {
@@ -143,7 +150,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
-  const { data, scoreFlash, startSession, reset } = useSession();
+  const { data, scoreFlash, reset } = useSession();
   const { contacts, add: addContact, remove: removeContact } = useContacts();
   const { history, remove: removeCall, clearAll: clearHistory } =
     useCallHistory(data.state === "ended" ? (data.sessionId ?? "ended") : "active");
@@ -244,36 +251,33 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              {sessionActive ? (
+            {sessionActive && (
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={reset}
                   className="flex-1 sm:flex-none px-4 py-2.5 sm:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
                 >
                   Reset
                 </button>
-              ) : (
-                <>
-                  <button
-                    onClick={() => void startSession("gift-card-scam")}
-                    className="flex-1 sm:flex-none px-4 py-2.5 sm:py-2 bg-red-700 hover:bg-red-600 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Run scam call
-                  </button>
-                  <button
-                    onClick={() => void startSession("appointment")}
-                    className="flex-1 sm:flex-none px-4 py-2.5 sm:py-2 bg-blue-700 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Run appointment
-                  </button>
-                </>
-              )}
-            </div>
+              </div>
+            )}
 
             <CallHistoryPanel history={history} onDelete={removeCall} onClearAll={clearHistory} />
           </div>
 
           <div className="flex flex-col gap-4">
+            {user.canaryNumber && (
+              <div className="bg-gray-900 rounded-xl p-4 flex flex-col gap-1 border border-yellow-500/20">
+                <span className="text-xs text-gray-400 uppercase tracking-wide">Your protected number</span>
+                <span className="text-2xl font-bold text-yellow-400 tracking-tight">
+                  {formatPhone(user.canaryNumber)}
+                </span>
+                <span className="text-xs text-gray-500">
+                  Forward your calls to this number — Canary screens every caller before they reach you.
+                </span>
+              </div>
+            )}
+
             <div className="bg-gray-900 rounded-xl p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-gray-100">Heuristic Risk Score</h2>

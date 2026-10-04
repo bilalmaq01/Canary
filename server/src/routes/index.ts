@@ -3,8 +3,8 @@ import type { SocketStream } from "@fastify/websocket";
 import { createSession, getSession, getSessionByToken, getLatestActiveSession } from "../session.js";
 import { subscribe, publish } from "../bus.js";
 import { runReplay } from "../replay.js";
-import { intervene } from "../intervention.js";
-import type { ClipId, Evidence } from "../events.js";
+import { announceToConference } from "../twilio-announce.js";
+import type { ClipId } from "../events.js";
 import { registerTwilioRoutes } from "./twilio.js";
 import { registerEmailRoutes } from "./email.js";
 import { registerAuthRoutes, getUserFromRequest } from "./auth.js";
@@ -158,15 +158,17 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     session.contactRecommendation = action;
 
     if (action === "end") {
-      const evidence: Evidence = {
-        triggerPath: "score",
-        quotedLine: "Trusted contact recommended ending this call.",
-      };
-      const playClip = async (clipId: ClipId): Promise<"played" | "failed"> => {
-        publish(session.id, { type: "clip_result", clipId, result: "played" });
-        return "played";
-      };
-      await intervene(session, "contact-end-call", "score", evidence, playClip);
+      // Play the "your trusted contact recommends hanging up" voiceline straight
+      // onto the phone line so the protected user actually hears it. On a live
+      // call this is a Twilio conference announcement; for a replay/demo (no real
+      // call) we fall back to the dashboard audio via the clip_result event.
+      let result: "played" | "failed" = "failed";
+      if (session.sessionType === "live") {
+        result = await announceToConference(session.id, "contact-end-call");
+      } else {
+        result = "played";
+      }
+      publish(session.id, { type: "clip_result", clipId: "contact-end-call", result });
     }
 
     publish(session.id, { type: "contact_action", recommendation: action });

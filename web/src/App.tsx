@@ -11,6 +11,7 @@ interface User {
   email: string;
   name: string;
   protectedPhone: string | null;
+  canaryNumber: string | null;
 }
 
 const path = window.location.pathname;
