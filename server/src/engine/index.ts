@@ -293,6 +293,24 @@ function checkHighRisk(
       return { clipId: "warning-score", category: "payment", quotedLine: currentLine };
     }
 
+    // Remote-access tool + directing the victim into their bank account. No
+    // legitimate support agent ever has you open your bank while connected.
+    if (
+      containsAny(joinedRecent, [
+        "anydesk", "any desk", "teamviewer", "team viewer", "logmein", "chrome remote",
+        "remote desktop", "remote access", "screen share", "screen sharing",
+        "take control", "control of your screen", "control of the screen", "remote in",
+        "take over your screen", "take over your computer", "give me access to your computer",
+      ]) &&
+      containsAny(joinedRecent, [
+        "bank account", "your bank", "online banking", "banking app", "banking website",
+        "log into your bank", "log in to your bank", "open your bank", "open up your bank",
+        "into your bank", "access your bank",
+      ])
+    ) {
+      return { clipId: "warning-remote-access", category: "access", quotedLine: currentLine };
+    }
+
     // Remote-access takeover paired with a threat/consequence.
     if (
       containsAny(joinedRecent, [
@@ -357,7 +375,7 @@ function checkPayment(line: string): boolean {
     "send the money", "send cash", "send back the difference",
     // Wire/transfer demand phrases
     "wire it", "wire me", "wire us", "wire him", "wire her",
-    "wire the money", "wire the funds",
+    "wire the money", "wire the funds", "wire money", "wire funds", "wire cash",
     // Move/transfer savings/funds
     "move your savings", "move your money", "move the money", "move your funds",
     "transfer your funds", "transfer your savings", "transfer the funds", "transfer your money",
@@ -546,7 +564,7 @@ function checkUrgency(line: string): boolean {
     "close your account", "account will be closed", "shut down your account",
     "your benefits", "benefits will stop", "benefits will be terminated",
     // Consequences
-    "lose your job", "lose your pension", "lose your home", "lose your license",
+    "lose your job", "lose my job", "lose your pension", "lose your home", "lose your license",
     "lose your benefits", "lose your savings", "lose everything",
     "jail", "prison", "deported", "deportation",
     "fine", "penalty", "penalties",
@@ -575,6 +593,21 @@ function checkUrgency(line: string): boolean {
     "final notice", "final warning", "last chance", "last warning",
   ];
   if (containsAny(line, standaloneUrgency)) return true;
+
+  // Emotional manipulation / guilt — a common pressure tactic against elderly
+  // victims: the caller manufactures their own distress or leans on the
+  // relationship to rush the target. Maps to the urgency/pressure category.
+  const guiltPressure = [
+    "lose my job", "i'll lose my job", "i will lose my job", "i'm gonna lose my job",
+    "i'll get in trouble", "i will get in trouble", "i'll be in trouble", "i'll be fired",
+    "you're the only one who can help", "only you can help", "nobody else can help",
+    "after everything i've done for you", "after all i've done for you",
+    "i thought i could count on you", "don't let me down", "please don't let me down",
+    "i'm begging you", "i am begging you", "i'm desperate", "please help me",
+    "if you loved me", "if you really loved me", "if you cared", "if you really cared",
+    "don't you trust me", "if you don't trust me", "after all we've been through",
+  ];
+  if (containsAny(line, guiltPressure)) return true;
 
   return containsAnyWord(line, urgencyTriggers) && containsAnyWord(line, urgencyConsequences);
 }
