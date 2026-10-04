@@ -148,9 +148,9 @@ export default function ContactPage({ token }: ContactPageProps) {
                 <span className="text-xs text-gray-400 leading-relaxed">
                   I agree to receive one SMS alert from Canary AI if a scam is detected.
                   Msg & data rates may apply. Reply STOP to opt out.{" "}
-                  <a href="/privacy" className="underline text-gray-500 hover:text-gray-300">
-                    Privacy policy
-                  </a>
+                  <a href="/privacy" className="underline text-gray-500 hover:text-gray-300">Privacy policy</a>
+                  {" & "}
+                  <a href="/terms" className="underline text-gray-500 hover:text-gray-300">Terms</a>
                 </span>
               </label>
               {optInError && <p className="text-xs text-red-400">{optInError}</p>}

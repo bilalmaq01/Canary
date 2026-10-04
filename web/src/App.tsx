@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import Dashboard from "./Dashboard";
 import ContactPage from "./ContactPage";
-import EmailPage from "./EmailPage";
 import PrivacyPage from "./PrivacyPage";
+import TermsPage from "./TermsPage";
 import LoginPage from "./LoginPage";
 import RegisterPage from "./RegisterPage";
 
@@ -14,7 +14,7 @@ interface User {
 }
 
 const path = window.location.pathname;
-const isPublic = path.startsWith("/c/") || path === "/privacy";
+const isPublic = path.startsWith("/c/") || path === "/privacy" || path === "/terms";
 
 export default function App() {
   const [user, setUser] = useState<User | null | "loading">("loading");
@@ -38,6 +38,7 @@ export default function App() {
 
   if (path.startsWith("/c/")) return <ContactPage token={path.slice(3)} />;
   if (path === "/privacy") return <PrivacyPage />;
+  if (path === "/terms") return <TermsPage />;
 
   if (user === "loading") {
     return (
@@ -71,6 +72,5 @@ export default function App() {
     });
   };
 
-  if (path === "/email") return <EmailPage />;
   return <Dashboard user={user} onLogout={handleLogout} />;
 }

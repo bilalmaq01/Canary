@@ -35,9 +35,19 @@ export async function scanInbox(
     secure: true,
     auth: { user, pass: password },
     logger: false,
+    disableAutoIdle: true,
   });
 
-  await client.connect();
+  try {
+    await client.connect();
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message.toLowerCase() : "";
+    if (msg.includes("auth") || msg.includes("credentials") || msg.includes("command failed") || msg.includes("login")) {
+      throw new Error("Gmail authentication failed. Make sure IMAP is enabled in Gmail settings and you are using an App Password, not your regular password.");
+    }
+    throw e;
+  }
+
   const lock = await client.getMailboxLock("INBOX");
   const records: EmailRecord[] = [];
 
@@ -68,15 +78,14 @@ export async function scanInbox(
         const nameLower = fromName.toLowerCase();
         const knownBrand = BRAND_NAMES.find((b) => nameLower.includes(b)) ?? null;
 
-        const gemini = await analyzeEmail(subject, bodyText, fromDomain, knownBrand).catch(
-          () => null
-        );
+        const gemini = await analyzeEmail(subject, bodyText, fromDomain, knownBrand).catch(() => null);
 
         let riskScore = contentScore;
         if (domainFlag) riskScore = Math.min(100, riskScore + 40);
         if (gemini?.isScam && gemini.confidence >= 0.7) riskScore = Math.min(100, riskScore + 20);
 
         records.push({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           uid: (msg as any).uid as number,
           from: fromRaw,
           fromName,
@@ -96,7 +105,7 @@ export async function scanInbox(
     }
   } finally {
     lock.release();
-    await client.logout();
+    await client.logout().catch(() => {});
   }
 
   return records.sort((a, b) => b.riskScore - a.riskScore);

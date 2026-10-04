@@ -141,6 +141,8 @@ export default function RegisterPage({ onRegister, onGoToLogin }: RegisterPagePr
 
         <p className="text-center text-xs text-gray-600 mt-3">
           <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</a>
+          <span className="mx-1">·</span>
+          <a href="/terms" className="hover:text-gray-400 transition-colors">Terms</a>
         </p>
       </div>
     </div>

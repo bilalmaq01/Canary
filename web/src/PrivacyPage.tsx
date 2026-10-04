@@ -90,6 +90,11 @@ export default function PrivacyPage() {
           </section>
 
         </div>
+
+        <div className="mt-10 pt-6 border-t border-gray-800 flex gap-4 text-xs text-gray-600">
+          <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</a>
+          <a href="/terms" className="hover:text-gray-400 transition-colors">Terms and Conditions</a>
+        </div>
       </main>
     </div>
   );
