@@ -1,6 +1,6 @@
 import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { createEngine } from "./engine/index.js";
-import { analyzeConversation } from "./engine/gemini.js";
+import { analyzeConversation, clipForCategories } from "./engine/gemini.js";
 import { intervene } from "./intervention.js";
 import { publish } from "./bus.js";
 import { getSession } from "./session.js";
@@ -104,10 +104,13 @@ export function handleTwilioStream(
     }
 
     // Gemini analyzes full conversation context (non-blocking, primary decision-maker)
-    const recentLines = currentSession.transcript.slice(-6).map((l) => l.text);
+    const recentLines = currentSession.transcript.slice(-10).map((l) => l.text);
     void (async () => {
       try {
-        const analysis = await analyzeConversation(recentLines);
+        const analysis = await analyzeConversation(recentLines, {
+          score: currentSession.score,
+          categories: Array.from(currentSession.categoriesAwarded),
+        });
         if (!analysis) return;
 
         const sess = getSession(session.id);
@@ -126,13 +129,11 @@ export function handleTwilioStream(
           categoriesAwarded: Array.from(sess.categoriesAwarded),
         });
 
-        if (analysis.isScam && analysis.confidence >= 0.75 && !sess.intervened) {
-          const clipId = analysis.severity === "high" || analysis.categories.includes("payment")
-            ? "warning-gift-card"
-            : "warning-score";
+        if (analysis.isScam && analysis.confidence >= 0.70 && !sess.intervened) {
+          const clipId = clipForCategories(analysis.categories, analysis.severity);
           void intervene(sess, clipId, "score", {
             triggerPath: "score",
-            quotedLine: analysis.reason || "Scam pattern detected",
+            quotedLine: analysis.quotedLine || analysis.reason || "Scam pattern detected",
           }, playClip);
         }
       } catch {

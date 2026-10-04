@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { createEngine } from "./engine/index.js";
-import { analyzeConversation } from "./engine/gemini.js";
+import { analyzeConversation, clipForCategories } from "./engine/gemini.js";
 import { intervene } from "./intervention.js";
 import { publish } from "./bus.js";
 import { getSession } from "./session.js";
@@ -65,10 +65,13 @@ export async function runReplay(
     }
 
     // Gemini analyzes the full conversation context (non-blocking, primary decision-maker)
-    const recentLines = currentSession.transcript.slice(-6).map((l) => l.text);
+    const recentLines = currentSession.transcript.slice(-10).map((l) => l.text);
     void (async () => {
       try {
-        const analysis = await analyzeConversation(recentLines);
+        const analysis = await analyzeConversation(recentLines, {
+          score: currentSession.score,
+          categories: Array.from(currentSession.categoriesAwarded),
+        });
         if (!analysis) return;
 
         const sess = getSession(session.id);
@@ -88,14 +91,12 @@ export async function runReplay(
           categoriesAwarded: Array.from(sess.categoriesAwarded),
         });
 
-        // Gemini makes the call: high confidence → intervene immediately
-        if (analysis.isScam && analysis.confidence >= 0.75 && !sess.intervened) {
-          const clipId = analysis.severity === "high" || analysis.categories.includes("payment")
-            ? "warning-gift-card"
-            : "warning-score";
+        // Gemini makes the call: confidence >= 0.70 → intervene
+        if (analysis.isScam && analysis.confidence >= 0.70 && !sess.intervened) {
+          const clipId = clipForCategories(analysis.categories, analysis.severity);
           await intervene(sess, clipId, "score", {
             triggerPath: "score",
-            quotedLine: analysis.reason || "Scam pattern detected",
+            quotedLine: analysis.quotedLine || analysis.reason || "Scam pattern detected",
           }, playClip);
         }
       } catch {
