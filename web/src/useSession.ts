@@ -38,6 +38,9 @@ export function useSession() {
   const scoreFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const isStartingRef = useRef(false);
+  // Session the user manually dismissed via Reset — the live-call poll must not
+  // re-attach to it (it may still be running/ended-pending on the server).
+  const dismissedRef = useRef<string | null>(null);
 
   const connectWs = useCallback((sessionId: string, contactUrl: string, type: "replay" | "live") => {
     const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -107,7 +110,10 @@ export function useSession() {
     isStartingRef.current = false;
     wsRef.current?.close();
     wsRef.current = null;
-    setData(INITIAL_DATA);
+    setData((d) => {
+      if (d.sessionId) dismissedRef.current = d.sessionId;
+      return INITIAL_DATA;
+    });
   }, []);
 
   // Poll for incoming live calls when idle
@@ -120,6 +126,7 @@ export function useSession() {
         const res = await fetch("/api/session/active");
         const { session } = await res.json() as { session: { sessionId: string; contactUrl: string } | null };
         if (!session) return;
+        if (session.sessionId === dismissedRef.current) return; // user cleared this one
         isStartingRef.current = true;
         connectWs(session.sessionId, session.contactUrl, "live");
       } catch {}
