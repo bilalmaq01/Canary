@@ -30,6 +30,7 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
 
     const session = createSession();
     const callerNumber = (req.body as any).From as string;
+    session.callerCallSid = (req.body as any).CallSid as string;
 
     // Assign to the account owner so DB trusted contacts are included in SMS alerts
     const { getFirstUser } = await import("../db/index.js");
@@ -61,6 +62,9 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
           to: PROTECTED_PHONE_NUMBER,
           from: TWILIO_PHONE_NUMBER,
           twiml: `<Response><Dial><Conference>${"conf-" + session.id}</Conference></Dial></Response>`,
+          statusCallback: `${BASE_URL}/twilio/victim-ended/${session.id}`,
+          statusCallbackEvent: ["completed"],
+          statusCallbackMethod: "POST",
         });
         session.victimCallSid = victimCall.sid;
       } catch (e) {
@@ -148,6 +152,25 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
         client.calls(session.victimCallSid)
           .update({ status: "completed" })
           .catch((e) => console.error("Failed to hang up victim call:", e));
+      }
+    }
+    reply.header("Content-Type", "text/xml").send(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`);
+  });
+
+  // POST /twilio/victim-ended/:sessionId — fires when the victim (protected user) hangs up
+  app.post("/twilio/victim-ended/:sessionId", async (req, reply) => {
+    const { sessionId } = req.params as { sessionId: string };
+    const session = getSession(sessionId);
+    if (session && session.state !== "ended") {
+      session.state = "ended";
+      publish(sessionId, { type: "session_ended" });
+
+      // Hang up the scammer's inbound leg
+      if (session.callerCallSid && TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN) {
+        const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+        client.calls(session.callerCallSid)
+          .update({ status: "completed" })
+          .catch((e) => console.error("Failed to hang up caller:", e));
       }
     }
     reply.header("Content-Type", "text/xml").send(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`);

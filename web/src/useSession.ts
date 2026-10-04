@@ -70,22 +70,30 @@ export function useSession() {
     if (isStartingRef.current) return;
     isStartingRef.current = true;
 
-    const res = await fetch("/api/session", { method: "POST" });
-    const { sessionId, contactUrl } = await res.json() as { sessionId: string; contactUrl: string };
+    try {
+      const res = await fetch("/api/session", { method: "POST" });
+      if (!res.ok) { isStartingRef.current = false; return; }
+      const { sessionId, contactUrl } = await res.json() as { sessionId: string; contactUrl: string };
 
-    const ws = connectWs(sessionId, contactUrl, "replay");
+      const ws = connectWs(sessionId, contactUrl, "replay");
 
-    await new Promise<void>((resolve) => {
-      const check = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) { clearInterval(check); resolve(); }
-      }, 50);
-    });
+      await new Promise<void>((resolve) => {
+        const check = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) { clearInterval(check); resolve(); }
+          if (ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+            clearInterval(check); isStartingRef.current = false; resolve();
+          }
+        }, 50);
+      });
 
-    await fetch(`/api/session/${sessionId}/replay`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fixture }),
-    });
+      await fetch(`/api/session/${sessionId}/replay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fixture }),
+      });
+    } catch {
+      isStartingRef.current = false;
+    }
   }, [connectWs]);
 
   const reset = useCallback(() => {

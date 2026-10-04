@@ -49,6 +49,7 @@ export interface Session {
   contactUrl?: string;
   userId?: string;
   victimCallSid?: string;
+  callerCallSid?: string;
 }
 
 export interface CallSource {
