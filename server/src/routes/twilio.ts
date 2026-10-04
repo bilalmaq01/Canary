@@ -40,12 +40,13 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
     }
 
     // TwiML: start media stream (caller audio only) + join conference
+    // action fires when the caller hangs up (Dial verb ends)
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Start>
     <Stream url="wss://${new URL(BASE_URL!).host}/twilio/stream/${session.id}" track="inbound_track" />
   </Start>
-  <Dial>
+  <Dial action="${BASE_URL}/twilio/call-ended/${session.id}" method="POST">
     <Conference>${"conf-" + session.id}</Conference>
   </Dial>
 </Response>`;
@@ -132,9 +133,20 @@ export async function registerTwilioRoutes(app: FastifyInstance): Promise<void> 
     handleTwilioStream(conn, session, playClip);
   });
 
-  // POST /twilio/status — optional: handle call status callbacks
+  // POST /twilio/call-ended/:sessionId — fires when the caller hangs up
+  app.post("/twilio/call-ended/:sessionId", async (req, reply) => {
+    const { sessionId } = req.params as { sessionId: string };
+    const session = getSession(sessionId);
+    if (session && session.state !== "ended") {
+      session.state = "ended";
+      publish(sessionId, { type: "session_ended" });
+    }
+    // Return empty TwiML so Twilio doesn't complain
+    reply.header("Content-Type", "text/xml").send(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`);
+  });
+
+  // POST /twilio/status — call status callbacks (no-op, kept for Twilio config)
   app.post("/twilio/status", async (_req, reply) => {
-    // Session cleanup handled by stream close event
     reply.send("ok");
   });
 }

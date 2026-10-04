@@ -113,6 +113,99 @@ function categoryLabel(cat: Category): string {
   }
 }
 
+interface EmailResult {
+  uid: number;
+  subject: string;
+  fromName: string;
+  fromDomain: string;
+  riskScore: number;
+  triggered: boolean;
+  flags: { type: string; detail: string }[];
+  geminiQuote?: string;
+  geminiScamType?: string;
+}
+
+function EmailTab() {
+  const [emailAddr, setEmailAddr] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<EmailResult[] | null>(null);
+  const [flagged, setFlagged] = useState(0);
+
+  const scan = async () => {
+    if (!emailAddr || !password) return;
+    setLoading(true);
+    setError(null);
+    setResults(null);
+    try {
+      const res = await fetch("/api/email/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailAddr, password, limit: 50 }),
+      });
+      const data = (await res.json()) as Record<string, unknown>;
+      if (!res.ok) { setError((data.error as string) || "Scan failed"); }
+      else {
+        setResults(data.emails as EmailResult[]);
+        setFlagged(data.flagged as number);
+      }
+    } catch { setError("Could not connect"); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-gray-900 rounded-xl p-4 flex flex-col gap-3">
+        <p className="text-xs text-gray-500">Gmail + app password (Google Account → Security → App Passwords)</p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input type="email" placeholder="Gmail address" value={emailAddr}
+            onChange={(e) => setEmailAddr(e.target.value)}
+            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500" />
+          <input type="password" placeholder="App password" value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void scan(); }}
+            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500" />
+          <button onClick={() => void scan()} disabled={loading || !emailAddr || !password}
+            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-700 disabled:text-gray-500 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+            {loading ? "Scanning…" : "Scan"}
+          </button>
+        </div>
+        {error && <p className="text-xs text-red-400">{error}</p>}
+      </div>
+
+      {results && (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-gray-500">
+            {results.length} scanned · <span className="text-red-400 font-medium">{flagged} flagged</span>
+          </p>
+          <div className="flex flex-col gap-1.5 max-h-96 overflow-y-auto pr-1">
+            {results.map((e) => (
+              <div key={e.uid} className={`bg-gray-900 rounded-lg px-3 py-2.5 border ${e.triggered ? "border-red-800" : "border-gray-800"}`}>
+                <div className="flex items-start gap-2">
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold shrink-0 mt-0.5 ${e.riskScore >= 70 ? "bg-red-700 text-white" : e.riskScore >= 40 ? "bg-yellow-600 text-white" : "bg-gray-700 text-gray-400"}`}>
+                    {e.riskScore}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white truncate">{e.subject || "(no subject)"}</p>
+                    <p className="text-xs text-gray-500 truncate">{e.fromName || e.fromDomain}</p>
+                    {e.geminiQuote && (
+                      <p className="text-xs text-red-400 italic mt-1 truncate">"{e.geminiQuote}"</p>
+                    )}
+                    {e.flags.length > 0 && (
+                      <p className="text-xs text-gray-600 mt-0.5">{e.flags.map(f => f.type.replace("_", " ")).join(" · ")}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface DashboardProps {
   user: User;
   onLogout: () => void;
@@ -126,6 +219,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [addingContact, setAddingContact] = useState(false);
+  const [activeTab, setActiveTab] = useState<"call" | "email">("call");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -152,12 +246,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           <span className="text-xs text-yellow-500/70 tracking-wide hidden sm:block">the canary in your phone line</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 text-sm">
-          <a
-            href="/email"
-            className="px-2.5 sm:px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition-colors text-xs font-medium"
-          >
-            📧 <span className="hidden sm:inline">Email Scanner</span><span className="sm:hidden">Email</span>
-          </a>
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${data.wsConnected ? "bg-green-500" : "bg-gray-500"}`}
           />
@@ -173,7 +261,21 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         </div>
       </header>
 
+      <div className="border-b border-gray-800 px-4 sm:px-6">
+        <div className="flex gap-1 max-w-6xl mx-auto">
+          {(["call", "email"] as const).map((tab) => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? "border-yellow-500 text-white" : "border-transparent text-gray-500 hover:text-gray-300"}`}>
+              {tab === "call" ? "📞 Call Shield" : "📧 Email Scan"}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <main className="flex-1 p-4 sm:p-6">
+        {activeTab === "email" ? (
+          <div className="max-w-6xl mx-auto"><EmailTab /></div>
+        ) : (
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <div className="flex flex-col gap-4">
             <div className="bg-gray-900 rounded-xl p-4 flex flex-col gap-3">
@@ -415,6 +517,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             )}
           </div>
         </div>
+        )}
       </main>
     </div>
   );
