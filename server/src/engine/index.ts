@@ -39,13 +39,14 @@ function checkHighRisk(
     "steam card", "prepaid card", "vanilla card", "green dot",
   ]);
 
-  const thirdPersonSubjects = ["she ", "he ", "her ", "him "];
+  // Use space-padded subjects to avoid matching "he" inside "the", "they", "their", etc.
+  const thirdPersonSubjects = [" she ", " he ", " her ", " him "];
   const isThirdPerson = (() => {
     for (let i = recentLines.length - 1; i >= 0; i--) {
       const l = recentLines[i].toLowerCase();
       if (containsAny(l, ["gift card", "itunes", "prepaid"])) {
         const idx = Math.max(l.indexOf("gift card"), l.indexOf("itunes"), l.indexOf("prepaid"));
-        const before = l.slice(0, idx);
+        const before = " " + l.slice(0, idx); // prepend space for start-of-string word boundary
         return thirdPersonSubjects.some((s) => before.includes(s));
       }
     }
@@ -53,14 +54,14 @@ function checkHighRisk(
   })();
 
   if (hasCardType && !isThirdPerson) {
-    // 1a — code/number demand (read, give me, tell me, etc.)
+    // 1a — code/number demand (broad verb list)
     if (
-      containsAny(joinedRecent, ["read", "give me", "tell me", "provide", "send me", "share", "type"]) &&
+      containsAny(joinedRecent, ["read", "give me", "tell me", "provide", "send me", "send", "share", "type", "scratch", "text me", "read back"]) &&
       containsAny(joinedRecent, ["code", "codes", "number", "numbers", "back", "pin", "serial", "digit"])
     ) {
       return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
     }
-    // 1b — explicit buy/pay demand for gift cards (no code request needed)
+    // 1b — explicit buy/pay demand for gift cards
     if (
       containsAny(joinedRecent, [
         "buy gift card", "buy itunes", "buy google play", "buy steam", "buy amazon gift",
@@ -72,18 +73,40 @@ function checkHighRisk(
     ) {
       return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
     }
+    // 1c — any payment action + gift card type (catches "buy a few gift cards", "pay [amount] with gift cards")
+    if (containsAny(joinedRecent, ["buy", "pay", "get", "pick up", "purchase", "send", "need", "want"])) {
+      return { clipId: "warning-gift-card", category: "payment", quotedLine: currentLine };
+    }
   }
 
   // Trigger 2 — login/verification code demand
   if (
-    containsAny(joinedRecent, ["read", "give me", "tell me", "provide"]) &&
+    containsAny(joinedRecent, ["read", "give me", "tell me", "provide", "enter", "send me"]) &&
     containsAny(joinedRecent, [
       "login code", "verification code", "code we just sent", "code we sent",
       "one-time code", "one time code", "security code", "access code",
       "otp", "two-factor code", "authentication code",
+      "code we",
+      "digit code",
+      "card number", "full card number", "expiration date", "cvv", "digits on the back",
+      "recovery phrase", "seed phrase", "twelve-word", "twenty-four word",
+      "your login", "account login", "bank login",
+      "router password", "wifi password", "wi-fi password",
+      "mother's maiden", "maiden name",
+      "read it back", "read it to me",
     ])
   ) {
     return { clipId: "warning-login-code", category: "access", quotedLine: currentLine };
+  }
+
+  // Trigger 5 — ransom / extortion demand
+  if (
+    containsAny(joinedRecent, [
+      "you will never see her", "you will never see him", "you will never see them",
+      "you will never see your", "never see them again", "never see her again", "never see him again",
+    ])
+  ) {
+    return { clipId: "warning-score", category: "urgency", quotedLine: currentLine };
   }
 
   // Trigger 3 — remote access + threat
@@ -91,11 +114,15 @@ function checkHighRisk(
     containsAny(joinedRecent, [
       "control of the screen", "control of your screen", "remote access",
       "screen control", "teamviewer", "anydesk", "logmein", "chrome remote",
-      "remote desktop", "screen share", "take control",
+      "remote desktop", "screen share", "take control", "see your screen",
+      "view your screen", "access your computer", "access your device",
     ]) &&
     containsAny(joinedRecent, [
       "lock the account", "contact the police", "lock your account",
       "suspend your account", "freeze your account", "arrest", "warrant",
+      "files will be deleted", "delete your files", "wipe your", "will be encrypted",
+      "will lock", "going to lock", "charge goes through", "charge will go through",
+      "or the charge",
     ])
   ) {
     return { clipId: "warning-remote-access", category: "access", quotedLine: currentLine };
@@ -153,13 +180,17 @@ function checkPayment(line: string): boolean {
     "ebay gift", "nordstrom gift", "sephora gift",
     // Wire / transfer services
     "wire transfer", "wire the money", "wire funds", "western union", "moneygram",
-    "money gram", "zelle", "venmo", "cash app", "cashapp", "paypal",
+    "money gram", "money transfer", "by wire", "zelle", "venmo", "cash app", "cashapp", "paypal",
     // Crypto
     "crypto", "bitcoin", "ethereum", "cryptocurrency", "digital currency",
-    "bitcoin atm", "crypto atm",
+    "bitcoin atm", "crypto atm", "bitcoin machine", "usdt", "tether", "stablecoin",
+    // Payment demand words (fee types that are always paired with a payment verb)
+    "taxes", "invoice payment",
     // Cash / check
     "money order", "cashier's check", "cashier check", "cash withdrawal",
     "withdraw cash", "withdraw the money", "withdraw funds",
+    // Precious metals (scam courier payment)
+    "gold bar", "gold bars", "gold coins",
     // Bank-direction scam phrases
     "go to your bank", "go to the bank", "head to the bank", "drive to the bank",
     "go to an atm", "go to a bitcoin", "shipping money", "send the money",
@@ -171,6 +202,7 @@ function checkPayment(line: string): boolean {
     "pay", "send", "purchase", "buy", "transfer", "get me", "go get",
     "go buy", "pick up", "obtain", "need you to", "want you to",
     "i need", "you need", "must", "withdraw", "take out", "pull out",
+    "deposit", "wire", "hand", "convert",
   ];
 
   // Standalone strong signals that don't need a verb pairing
@@ -178,6 +210,27 @@ function checkPayment(line: string): boolean {
     "go to your bank", "go to the bank", "head to the bank", "drive to the bank",
     "go to an atm", "go to a bitcoin atm", "shipping money",
     "send the money", "send cash", "send back the difference",
+    // Wire/transfer demand phrases
+    "wire it", "wire me", "wire us", "wire him", "wire her",
+    "wire the money", "wire the funds",
+    // Move/transfer savings/funds
+    "move your savings", "move your money", "move the money", "move your funds",
+    "transfer your funds", "transfer your savings", "transfer the funds", "transfer your money",
+    // Cash handoff
+    "hand it to", "hand over the cash", "hand me the cash", "hand the cash", "hand my agent",
+    "pick up the cash", "send the cash",
+    // Payment demands
+    "send the payment", "send a payment",
+    // Bitcoin deposit
+    "deposit into the bitcoin", "deposit it into", "deposit in the bitcoin",
+    // Cash withdrawal
+    "withdraw your cash", "withdraw the cash",
+    // Wire variants
+    "pay by wire", "by wire",
+    // Cash in-person handoff
+    "card deposit",
+    // Fee payment phrases
+    "for taxes",
   ];
   if (containsAny(line, standalone)) return true;
 
@@ -195,11 +248,24 @@ function checkAccess(line: string): boolean {
     "security code", "access code", "otp", "passcode", "two-factor", "2fa",
     "authentication code", "pin number", "temporary code", "reset code",
     "account number", "routing number", "social security number",
+    // Device/network credentials
+    "router password", "wi-fi password", "wifi password", "network password",
+    // Banking credentials
+    "bank login", "bank details", "bank information", "online banking",
+    "banking password", "your login",
+    // Card details
+    "card number", "full card number", "expiration date", "cvv",
+    "digits on the back", "three digits", "four digits", "security code on",
+    // Crypto wallet
+    "recovery phrase", "seed phrase", "twelve-word", "twenty-four word",
+    "wallet phrase", "private key",
+    // Identity
+    "mother's maiden", "maiden name",
   ];
   const accessVerbs = [
     "give", "read", "allow", "provide", "install", "download",
     "share", "enter", "type", "tell me", "send me", "confirm",
-    "verify", "need your", "require your",
+    "verify", "need your", "require your", "i need",
   ];
   return containsAny(line, accessMethods) && containsAny(line, accessVerbs);
 }
@@ -215,12 +281,16 @@ function checkSecrecy(line: string): boolean {
     "this is private", "between you and me", "just between us",
     "don't speak to", "do not speak to", "do not inform",
     "hang up if anyone", "step away from",
+    "keep it between", "keep it private", "tell no one",
   ];
   const secrecyTargets = [
     "bank", "family", "anyone", "wife", "husband", "children", "kids",
     "friends", "relatives", "lawyer", "attorney", "accountant",
     "financial advisor", "police", "nobody", "no one", "others",
     "teller", "bank employee", "bank manager", "neighbor", "someone else",
+    "us", "mom", "dad", "mother", "father", "parent", "parents",
+    "clerk", "servicer", "branch", "anyone else", "everyone else",
+    "advisor", "advisor", "spouse", "partner",
   ];
   return containsAny(line, secrecyPhrases) && containsAny(line, secrecyTargets);
 }
@@ -238,9 +308,11 @@ function checkAuthority(line: string, previousLine: string | undefined): boolean
     "fbi", "dea", "ftc", "sec", "treasury", "homeland",
     "attorney general", "prosecutor", "court", "courthouse",
     "sheriff", "detective", "officer", "agent",
-    "fraud department", "fraud division", "fraud team", "investigations",
+    "fraud department", "fraud division", "fraud team", "fraud unit", "investigations",
     "bank", "credit union", "financial institution", "visa", "mastercard",
     "amazon", "microsoft", "apple support", "tech support",
+    "customs", "border protection", "immigration", "billing", "carrier",
+    "enforcement", "patrol", "inspector",
   ];
   const authClaims = [
     "this is the", "this is",
@@ -273,6 +345,11 @@ function checkAuthority(line: string, previousLine: string | undefined): boolean
     "your account has been compromised", "your account has been flagged",
     "detected suspicious", "detected fraud", "detected a fraudulent",
     "we have flagged", "flagged your account",
+    "someone is draining", "being drained", "your funds are being",
+    "hackers are targeting", "detected hackers", "hackers on your",
+    "your accounts are compromised", "accounts have been compromised",
+    "account is being accessed", "unauthorized login",
+    "fraud case", "fraud investigation",
   ];
   if (containsAny(line, fraudClaims)) return true;
 
@@ -282,12 +359,17 @@ function checkAuthority(line: string, previousLine: string | undefined): boolean
 function checkUrgency(line: string): boolean {
   const urgencyTriggers = [
     // Time pressure
-    "today", "right now", "immediately", "within the hour", "within 24",
+    "today", "right now", "immediately", "now", "within the hour", "within 24",
     "expires", "expiring", "deadline", "time is running out",
+    "within two hours", "within an hour", "within one hour", "within the next hour",
+    "twenty-four hours", "twenty four hours",
+    "in two hours", "in one hour", "by end of day", "end of business",
     // Legal / law enforcement
     "warrant", "arrest", "arrested", "police", "officers", "law enforcement",
     "legal action", "lawsuit", "court", "summons", "charges", "prosecuted",
     "criminal charges", "federal charges", "indictment", "sue you",
+    "deputies will come", "officers will come to", "come to your home", "come to your door",
+    "sheriff will", "agent will come", "law enforcement will visit",
     // Account actions
     "freeze", "frozen", "suspend", "suspended", "block", "blocked",
     "close your account", "account will be closed", "shut down your account",
@@ -302,12 +384,14 @@ function checkUrgency(line: string): boolean {
     "overdue", "past due", "delinquent", "default",
     // Compromise claims
     "compromised", "hacked", "stolen", "identity theft",
+    "hacker", "hackers", "being hacked", "being compromised",
   ];
   const urgencyConsequences = [
-    "must", "have to", "need to", "or", "otherwise", "unless",
+    "must", "have to", "need to", " or", "otherwise", "unless",
     "will be", "going to be", "could be", "may be", "might be",
     "failure to", "if you do not", "if you don't", "we will", "they will",
     "you will", "you could", "you may",
+    "we need", "to keep", "to avoid", "to prevent",
   ];
   return containsAny(line, urgencyTriggers) && containsAny(line, urgencyConsequences);
 }
@@ -362,7 +446,7 @@ export function createEngine(): Engine {
       { cat: "access", fired: checkAccess(lineLower) },
       { cat: "secrecy", fired: checkSecrecy(lineLower) },
       { cat: "authority", fired: checkAuthority(lineLower, previousLine) },
-      { cat: "urgency", fired: checkUrgency(lineLower) },
+      { cat: "urgency", fired: checkUrgency(joinedRecent) },
     ];
 
     for (const { cat, fired } of checks) {
@@ -394,8 +478,8 @@ export function createEngine(): Engine {
     }
 
     // ── Score path trigger (triggers once) ─────────────────────────────────
-    // 2-category path: payment+secrecy, payment+access, or any two high-value cats
-    if (!intervened && score >= 55 && categoriesAwarded.size >= 2) {
+    // 2-category path: any two categories at 45+ points
+    if (!intervened && score >= 45 && categoriesAwarded.size >= 2) {
       intervened = true;
       lastResult = {
         score,
@@ -422,7 +506,7 @@ export function createEngine(): Engine {
     score += CATEGORY_POINTS[category];
 
     // Fire score-path trigger if threshold met and not yet intervened
-    if (!intervened && score >= 55 && categoriesAwarded.size >= 2) {
+    if (!intervened && score >= 45 && categoriesAwarded.size >= 2) {
       intervened = true;
       lastResult = {
         score,

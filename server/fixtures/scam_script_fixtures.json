@@ -1,0 +1,1432 @@
+[
+  {
+    "id": 1,
+    "group": "Government and legal",
+    "title": "IRS arrest warrant, gift cards",
+    "label": "scam",
+    "lines": [
+      "This is Officer Daniels with the IRS Criminal Division.",
+      "There is a warrant for your arrest over unpaid taxes.",
+      "You can settle this today if you pay with gift cards.",
+      "Do not tell your bank, they will freeze the case."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [
+      "gift cards demanded",
+      "threat"
+    ],
+    "points": 90,
+    "category_count": 4,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 2,
+    "group": "Government and legal",
+    "title": "IRS back taxes, wire transfer",
+    "label": "scam",
+    "lines": [
+      "This is the Internal Revenue Service enforcement office.",
+      "You owe four thousand two hundred dollars in back taxes.",
+      "Wire it within two hours or deputies will come to your home."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment"
+    ],
+    "flag_labels": [
+      "threat"
+    ],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 3,
+    "group": "Government and legal",
+    "title": "Social Security number suspended",
+    "label": "scam",
+    "lines": [
+      "This is the Social Security Administration.",
+      "Your Social Security number has been suspended because of suspicious activity.",
+      "Confirm your number now or your benefits will be cancelled today."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 4,
+    "group": "Government and legal",
+    "title": "Medicare card replacement",
+    "label": "scam",
+    "lines": [
+      "We are issuing new Medicare cards this month.",
+      "To send yours, please confirm your Medicare number and your bank account."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 50,
+    "category_count": 2,
+    "expected": "No trigger"
+  },
+  {
+    "id": 5,
+    "group": "Government and legal",
+    "title": "Missed jury duty fine",
+    "label": "scam",
+    "lines": [
+      "This is the court clerk's office. You missed jury duty and a warrant was issued.",
+      "You can clear it today with a fine of fifteen hundred dollars on prepaid cards.",
+      "Please do not discuss this with anyone until it is cleared."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [
+      "threat"
+    ],
+    "points": 90,
+    "category_count": 4,
+    "expected": "Score path"
+  },
+  {
+    "id": 6,
+    "group": "Government and legal",
+    "title": "County clerk civil filing, gift cards",
+    "label": "scam",
+    "lines": [
+      "This is the county clerk's office. There is a civil filing in your name.",
+      "It has to be settled today or the filing goes forward.",
+      "You need to buy gift cards and read me the codes on the back.",
+      "Do not tell your bank, and do not talk to your family until the codes are in."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [
+      "gift cards demanded",
+      "threat"
+    ],
+    "points": 90,
+    "category_count": 4,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 7,
+    "group": "Government and legal",
+    "title": "Customs package seized",
+    "label": "scam",
+    "lines": [
+      "This is U.S. Customs and Border Protection.",
+      "A package in your name was seized with illegal items inside.",
+      "Pay a nine hundred dollar release fee in Bitcoin today or you will be arrested."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment"
+    ],
+    "flag_labels": [
+      "threat"
+    ],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 8,
+    "group": "Government and legal",
+    "title": "Immigration file problem",
+    "label": "scam",
+    "lines": [
+      "This is the immigration services office.",
+      "There is a problem with your file that must be corrected today.",
+      "Send the correction fee by money transfer or your status may be cancelled."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment"
+    ],
+    "flag_labels": [
+      "threat"
+    ],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 9,
+    "group": "Government and legal",
+    "title": "Utility shutoff threat",
+    "label": "scam",
+    "lines": [
+      "Billing department at your power company.",
+      "Your account is sixty days past due and service will be shut off in thirty minutes.",
+      "Pay now with a prepaid card or a cash app, we cannot take a regular payment."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment"
+    ],
+    "flag_labels": [
+      "threat"
+    ],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 10,
+    "group": "Government and legal",
+    "title": "Unpaid toll, press to pay",
+    "label": "scam",
+    "lines": [
+      "Your toll account balance is overdue.",
+      "Pay twelve dollars fifty today to avoid fines. Press 1 to pay now."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 35,
+    "category_count": 2,
+    "expected": "No trigger"
+  },
+  {
+    "id": 11,
+    "group": "Government and legal",
+    "title": "Student loan forgiveness fee",
+    "label": "scam",
+    "lines": [
+      "You qualify for federal student loan forgiveness.",
+      "There is a one-time processing fee of two ninety-nine, and you must enroll by Friday.",
+      "Pay it by wire, and do not call your loan servicer. They will try to talk you out of it."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 90,
+    "category_count": 4,
+    "expected": "Score path"
+  },
+  {
+    "id": 12,
+    "group": "Government and legal",
+    "title": "Government grant fee, gift cards",
+    "label": "scam",
+    "lines": [
+      "Congratulations, you have been awarded a nine thousand dollar government grant.",
+      "To release it, send two hundred fifty dollars in gift cards for the processing fee.",
+      "Keep this confidential until the funds clear."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [
+      "gift cards demanded"
+    ],
+    "points": 75,
+    "category_count": 3,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 13,
+    "group": "Government and legal",
+    "title": "Tax refund and text code",
+    "label": "scam",
+    "lines": [
+      "You are owed a two thousand dollar tax refund.",
+      "To deposit it I need your bank login, and the code we are about to text you.",
+      "Read it to me as soon as it arrives."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Sensitive access"
+    ],
+    "flag_labels": [
+      "login or verification code demanded"
+    ],
+    "points": 50,
+    "category_count": 2,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 14,
+    "group": "Government and legal",
+    "title": "Disaster relief confirmation",
+    "label": "scam",
+    "lines": [
+      "This is the disaster relief assistance line.",
+      "Your claim closes today unless you confirm your Social Security number and bank account."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 15,
+    "group": "Banking and money",
+    "title": "Bank fraud, move to a safe account",
+    "label": "scam",
+    "lines": [
+      "This is your bank's fraud department.",
+      "Someone is draining your account right now.",
+      "Move your savings to this secure account immediately.",
+      "Do not tell the branch staff, one of them may be involved."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 90,
+    "category_count": 4,
+    "expected": "Score path"
+  },
+  {
+    "id": 16,
+    "group": "Banking and money",
+    "title": "Read me the verification code",
+    "label": "scam",
+    "lines": [
+      "We flagged a fraudulent charge on your card.",
+      "We just texted you a verification code.",
+      "Read it to me so I can block the charge."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [
+      "login or verification code demanded"
+    ],
+    "points": 65,
+    "category_count": 3,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 17,
+    "group": "Banking and money",
+    "title": "Compromised card, read the numbers",
+    "label": "scam",
+    "lines": [
+      "Your card ending in 4410 was used in another state.",
+      "To cancel it right now, read me the full card number, the expiration date, and the three digits on the back."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 18,
+    "group": "Banking and money",
+    "title": "Interest rate reduction robocall",
+    "label": "scam",
+    "lines": [
+      "Press 1 to lower your credit card interest rate to three point nine percent.",
+      "We only need your card number to verify your account."
+    ],
+    "categories": [
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 30,
+    "category_count": 1,
+    "expected": "No trigger"
+  },
+  {
+    "id": 19,
+    "group": "Banking and money",
+    "title": "Mistaken Zelle transfer",
+    "label": "scam",
+    "lines": [
+      "Hi, I accidentally sent you eight hundred dollars on Zelle.",
+      "I am in a tough spot. Can you send it back to this number right now?"
+    ],
+    "categories": [
+      "Payment",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 45,
+    "category_count": 2,
+    "expected": "No trigger"
+  },
+  {
+    "id": 20,
+    "group": "Banking and money",
+    "title": "Guaranteed crypto returns",
+    "label": "scam",
+    "lines": [
+      "Our platform guarantees forty percent weekly returns.",
+      "Deposit in Bitcoin today because the offer closes tonight.",
+      "Do not mention it to your financial advisor, they will only talk you out of it."
+    ],
+    "categories": [
+      "Payment",
+      "Urgency or threat",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 70,
+    "category_count": 3,
+    "expected": "Score path"
+  },
+  {
+    "id": 21,
+    "group": "Banking and money",
+    "title": "Trading-app long con",
+    "label": "scam",
+    "lines": [
+      "My uncle's trading app doubled my savings, and I want you to have the same.",
+      "Transfer your funds to the platform in USDT before the window closes tomorrow.",
+      "Do not tell your family, they will not understand."
+    ],
+    "categories": [
+      "Payment",
+      "Urgency or threat",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 70,
+    "category_count": 3,
+    "expected": "Score path"
+  },
+  {
+    "id": 22,
+    "group": "Banking and money",
+    "title": "Advance-fee loan, gift cards",
+    "label": "scam",
+    "lines": [
+      "Your fifteen thousand dollar loan is approved.",
+      "Before we release it, pay a five hundred dollar insurance fee with gift cards."
+    ],
+    "categories": [
+      "Payment"
+    ],
+    "flag_labels": [
+      "gift cards demanded"
+    ],
+    "points": 30,
+    "category_count": 1,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 23,
+    "group": "Banking and money",
+    "title": "Debt collector threat",
+    "label": "scam",
+    "lines": [
+      "This is a final notice from the legal department about a payday loan.",
+      "Pay seven hundred eighty dollars today by prepaid card or we will file suit and call your employer."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment"
+    ],
+    "flag_labels": [
+      "threat"
+    ],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 24,
+    "group": "Banking and money",
+    "title": "Credit repair upfront fee",
+    "label": "scam",
+    "lines": [
+      "We can erase your bad credit.",
+      "Pay twelve hundred dollars up front by wire and we will start working on it."
+    ],
+    "categories": [
+      "Payment"
+    ],
+    "flag_labels": [],
+    "points": 30,
+    "category_count": 1,
+    "expected": "No trigger"
+  },
+  {
+    "id": 25,
+    "group": "Banking and money",
+    "title": "Bank detective cash handoff",
+    "label": "scam",
+    "lines": [
+      "I am a detective working with your bank on an internal fraud case.",
+      "Withdraw nine thousand dollars in cash today and hand it to my agent.",
+      "If the teller asks, tell them it is for a home repair."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 90,
+    "category_count": 4,
+    "expected": "Score path"
+  },
+  {
+    "id": 26,
+    "group": "Banking and money",
+    "title": "Check overpayment refund",
+    "label": "scam",
+    "lines": [
+      "My company sent you a check for three thousand dollars too much.",
+      "Deposit it and wire me the difference today."
+    ],
+    "categories": [
+      "Payment",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 45,
+    "category_count": 2,
+    "expected": "No trigger"
+  },
+  {
+    "id": 27,
+    "group": "Banking and money",
+    "title": "Vendor changed bank account",
+    "label": "scam",
+    "lines": [
+      "This is Dana from accounting at your supplier.",
+      "We changed banks. Send the next invoice payment to the new account today.",
+      "Please keep this between us until the audit is done."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 90,
+    "category_count": 4,
+    "expected": "Score path"
+  },
+  {
+    "id": 28,
+    "group": "Banking and money",
+    "title": "Boss needs gift cards",
+    "label": "scam",
+    "lines": [
+      "It is your manager. I am stuck in a meeting and cannot talk.",
+      "I need ten hundred-dollar gift cards for clients, and send me the codes.",
+      "Keep this quiet for now."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [
+      "gift cards demanded"
+    ],
+    "points": 75,
+    "category_count": 3,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 29,
+    "group": "Tech support and accounts",
+    "title": "Windows virus, remote access",
+    "label": "scam",
+    "lines": [
+      "This is Microsoft Windows support.",
+      "Your computer is sending out viruses.",
+      "Download this tool so I can take control of your screen, or your files will be deleted today."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [
+      "remote access requested",
+      "threat"
+    ],
+    "points": 65,
+    "category_count": 3,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 30,
+    "group": "Tech support and accounts",
+    "title": "Refund through remote access",
+    "label": "scam",
+    "lines": [
+      "Your antivirus plan renewed for three ninety-nine.",
+      "To refund you, I need remote access to your bank page.",
+      "Do not tell the bank, they will cancel the refund."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Sensitive access",
+      "Secrecy"
+    ],
+    "flag_labels": [
+      "remote access requested"
+    ],
+    "points": 75,
+    "category_count": 3,
+    "expected": "Score path"
+  },
+  {
+    "id": 31,
+    "group": "Tech support and accounts",
+    "title": "Apple ID locked, read the code",
+    "label": "scam",
+    "lines": [
+      "Your Apple ID has been locked.",
+      "Read me the six-digit code Apple just sent so I can unlock it."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Sensitive access"
+    ],
+    "flag_labels": [
+      "login or verification code demanded"
+    ],
+    "points": 50,
+    "category_count": 2,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 32,
+    "group": "Tech support and accounts",
+    "title": "Internet provider says router hacked",
+    "label": "scam",
+    "lines": [
+      "Your internet provider detected hackers on your router.",
+      "Give me your router password so I can secure it today."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 33,
+    "group": "Tech support and accounts",
+    "title": "Unauthorized Amazon order",
+    "label": "scam",
+    "lines": [
+      "Amazon fraud team. A twelve ninety-nine phone order is about to ship.",
+      "Install this app so we can see your screen and cancel it, or the charge goes through."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [
+      "remote access requested",
+      "threat"
+    ],
+    "points": 65,
+    "category_count": 3,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 34,
+    "group": "Tech support and accounts",
+    "title": "PayPal charge dispute",
+    "label": "scam",
+    "lines": [
+      "PayPal security: a four ninety-nine charge to an unknown merchant.",
+      "Press 1 to dispute, then enter your login right away to confirm it is you."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 35,
+    "group": "Tech support and accounts",
+    "title": "Subscription renewal callback bait",
+    "label": "scam",
+    "lines": [
+      "Your computer support plan renews today for three forty-nine.",
+      "Call this number before midnight to cancel."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 35,
+    "category_count": 2,
+    "expected": "No trigger"
+  },
+  {
+    "id": 36,
+    "group": "Tech support and accounts",
+    "title": "Listing verification code",
+    "label": "scam",
+    "lines": [
+      "Hi, I am calling about your listing.",
+      "I am sending a code to prove you are real, so read it back to me."
+    ],
+    "categories": [
+      "Sensitive access"
+    ],
+    "flag_labels": [
+      "login or verification code demanded"
+    ],
+    "points": 30,
+    "category_count": 1,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 37,
+    "group": "Tech support and accounts",
+    "title": "Bitcoin ATM deposit",
+    "label": "scam",
+    "lines": [
+      "Your accounts are compromised.",
+      "Withdraw your cash right away and deposit it into the Bitcoin machine at the gas station.",
+      "Stay on the phone and do not tell the clerk why."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 90,
+    "category_count": 4,
+    "expected": "Score path"
+  },
+  {
+    "id": 38,
+    "group": "Tech support and accounts",
+    "title": "Crypto wallet recovery phrase",
+    "label": "scam",
+    "lines": [
+      "This is wallet support. Your funds are at risk.",
+      "Read me your twelve-word recovery phrase so I can move them to a safe wallet.",
+      "Do not share this with anyone, including friends."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 90,
+    "category_count": 4,
+    "expected": "Score path"
+  },
+  {
+    "id": 39,
+    "group": "Tech support and accounts",
+    "title": "Phone carrier PIN and code",
+    "label": "scam",
+    "lines": [
+      "Your mobile carrier here. You qualify for a free upgrade.",
+      "To confirm, tell me your account PIN and the code we are texting you."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Sensitive access"
+    ],
+    "flag_labels": [
+      "login or verification code demanded"
+    ],
+    "points": 50,
+    "category_count": 2,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 40,
+    "group": "Tech support and accounts",
+    "title": "Package redelivery fee",
+    "label": "scam",
+    "lines": [
+      "Your parcel is being held at the depot.",
+      "Pay a two ninety-nine redelivery fee now and give me your card number."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 41,
+    "group": "Family and emergency",
+    "title": "Grandparent in jail",
+    "label": "scam",
+    "lines": [
+      "Grandma, it is me. I am in jail and need bail money.",
+      "Please do not tell Mom and Dad.",
+      "A lawyer will call, then a courier will pick up the cash today."
+    ],
+    "categories": [
+      "Payment",
+      "Secrecy",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 70,
+    "category_count": 3,
+    "expected": "Score path"
+  },
+  {
+    "id": 42,
+    "group": "Family and emergency",
+    "title": "Fake kidnapping",
+    "label": "scam",
+    "lines": [
+      "We have your daughter.",
+      "Wire five thousand dollars now or you will never see her.",
+      "Do not hang up and do not call the police."
+    ],
+    "categories": [
+      "Payment",
+      "Secrecy",
+      "Urgency or threat"
+    ],
+    "flag_labels": [
+      "threat"
+    ],
+    "points": 70,
+    "category_count": 3,
+    "expected": "Score path"
+  },
+  {
+    "id": 43,
+    "group": "Family and emergency",
+    "title": "Hospital card deposit",
+    "label": "scam",
+    "lines": [
+      "I am a nurse at the county hospital. Your brother was in a car accident.",
+      "He needs surgery and we need a card deposit over the phone right now."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 44,
+    "group": "Family and emergency",
+    "title": "New number, gift cards",
+    "label": "scam",
+    "lines": [
+      "Mom, I dropped my phone in water. This is my new number.",
+      "Can you buy a few gift cards and text me the codes? Do not tell Dad yet."
+    ],
+    "categories": [
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [
+      "gift cards demanded"
+    ],
+    "points": 55,
+    "category_count": 2,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 45,
+    "group": "Family and emergency",
+    "title": "Voice-clone emergency",
+    "label": "scam",
+    "lines": [
+      "Dad, I was in a wreck and I need money for a lawyer right now.",
+      "Please send it in crypto and do not tell Mom."
+    ],
+    "categories": [
+      "Payment",
+      "Secrecy",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 70,
+    "category_count": 3,
+    "expected": "Score path"
+  },
+  {
+    "id": 46,
+    "group": "Family and emergency",
+    "title": "Friend robbed abroad",
+    "label": "scam",
+    "lines": [
+      "I got robbed in Madrid and my passport is gone.",
+      "Wire me eighteen hundred dollars today, I will pay you back. Keep it between us."
+    ],
+    "categories": [
+      "Payment",
+      "Secrecy",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 70,
+    "category_count": 3,
+    "expected": "Score path"
+  },
+  {
+    "id": 47,
+    "group": "Romance",
+    "title": "Deployed partner, gift cards",
+    "label": "scam",
+    "lines": [
+      "I ship out tomorrow and the leave papers cost fifteen hundred dollars.",
+      "The base store only takes gift cards, so please send the codes."
+    ],
+    "categories": [
+      "Payment",
+      "Urgency or threat"
+    ],
+    "flag_labels": [
+      "gift cards demanded"
+    ],
+    "points": 45,
+    "category_count": 2,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 48,
+    "group": "Romance",
+    "title": "Romance medical emergency",
+    "label": "scam",
+    "lines": [
+      "My daughter needs surgery tonight.",
+      "Please wire the money, and do not tell your family. They will only doubt me."
+    ],
+    "categories": [
+      "Payment",
+      "Secrecy",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 70,
+    "category_count": 3,
+    "expected": "Score path"
+  },
+  {
+    "id": 49,
+    "group": "Romance",
+    "title": "Travel clearance fee",
+    "label": "scam",
+    "lines": [
+      "I bought my ticket to visit you, but customs needs a six hundred dollar clearance fee.",
+      "Send it by MoneyGram today so I can board."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment"
+    ],
+    "flag_labels": [],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 50,
+    "group": "Prizes, sales, and charity",
+    "title": "Lottery taxes",
+    "label": "scam",
+    "lines": [
+      "Congratulations, you won seven hundred fifty thousand dollars in the international lottery.",
+      "To release it, wire nine fifty for taxes within twenty-four hours.",
+      "Keep it private so no one else can claim it."
+    ],
+    "categories": [
+      "Payment",
+      "Urgency or threat",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 70,
+    "category_count": 3,
+    "expected": "Score path"
+  },
+  {
+    "id": 51,
+    "group": "Prizes, sales, and charity",
+    "title": "Timeshare resale fee",
+    "label": "scam",
+    "lines": [
+      "I have a buyer for your timeshare at eighteen thousand dollars.",
+      "Wire a one thousand dollar closing fee today."
+    ],
+    "categories": [
+      "Payment",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 45,
+    "category_count": 2,
+    "expected": "No trigger"
+  },
+  {
+    "id": 52,
+    "group": "Prizes, sales, and charity",
+    "title": "Fake veterans charity",
+    "label": "scam",
+    "lines": [
+      "Please donate to disabled veterans today.",
+      "The easiest way is gift cards. You can read me the numbers right now."
+    ],
+    "categories": [
+      "Payment",
+      "Urgency or threat"
+    ],
+    "flag_labels": [
+      "gift cards demanded"
+    ],
+    "points": 45,
+    "category_count": 2,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 53,
+    "group": "Prizes, sales, and charity",
+    "title": "Sweepstakes handling fee",
+    "label": "scam",
+    "lines": [
+      "This is the prize patrol. You won five million dollars.",
+      "First, pay a handling fee with prepaid cards and do not tell anyone until we arrive."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 75,
+    "category_count": 3,
+    "expected": "Score path"
+  },
+  {
+    "id": 54,
+    "group": "Prizes, sales, and charity",
+    "title": "Car warranty robocall",
+    "label": "scam",
+    "lines": [
+      "We have been trying to reach you about your car's extended warranty.",
+      "Press 1 now, your coverage expires today."
+    ],
+    "categories": [
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 15,
+    "category_count": 1,
+    "expected": "No trigger"
+  },
+  {
+    "id": 55,
+    "group": "Prizes, sales, and charity",
+    "title": "Roofing deposit",
+    "label": "scam",
+    "lines": [
+      "I am the roofer from next door and I saw damage to your roof.",
+      "Send a two thousand dollar deposit by Zelle today and I will start tomorrow."
+    ],
+    "categories": [
+      "Payment",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 45,
+    "category_count": 2,
+    "expected": "No trigger"
+  },
+  {
+    "id": 56,
+    "group": "Prizes, sales, and charity",
+    "title": "Free medical alert device",
+    "label": "scam",
+    "lines": [
+      "Your family ordered you a free medical alert system.",
+      "Just confirm your credit card for shipping."
+    ],
+    "categories": [
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 30,
+    "category_count": 1,
+    "expected": "No trigger"
+  },
+  {
+    "id": 57,
+    "group": "Prizes, sales, and charity",
+    "title": "Insurance enrollment deadline",
+    "label": "scam",
+    "lines": [
+      "Medicare enrollment closes today.",
+      "Give me your Medicare number and bank details to keep your coverage."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Sensitive access"
+    ],
+    "flag_labels": [],
+    "points": 65,
+    "category_count": 3,
+    "expected": "Near miss"
+  },
+  {
+    "id": 58,
+    "group": "Prizes, sales, and charity",
+    "title": "Mystery shopper gift cards",
+    "label": "scam",
+    "lines": [
+      "You have been selected as a mystery shopper.",
+      "Buy two two-hundred-dollar gift cards, scratch off the backs, and read me the numbers.",
+      "We will reimburse you by check."
+    ],
+    "categories": [
+      "Payment"
+    ],
+    "flag_labels": [
+      "gift cards demanded"
+    ],
+    "points": 30,
+    "category_count": 1,
+    "expected": "HIGH-RISK path"
+  },
+  {
+    "id": 59,
+    "group": "Jobs and housing",
+    "title": "Equipment check job offer",
+    "label": "scam",
+    "lines": [
+      "Congratulations on the job!",
+      "We will send a check to buy your home-office equipment.",
+      "Deposit it, then wire the vendor two thousand dollars this week."
+    ],
+    "categories": [
+      "Payment"
+    ],
+    "flag_labels": [],
+    "points": 30,
+    "category_count": 1,
+    "expected": "No trigger"
+  },
+  {
+    "id": 60,
+    "group": "Jobs and housing",
+    "title": "Landlord out of the country",
+    "label": "scam",
+    "lines": [
+      "The apartment is available but I am out of the country.",
+      "Wire the deposit today to hold it before someone else takes it."
+    ],
+    "categories": [
+      "Payment",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 45,
+    "category_count": 2,
+    "expected": "No trigger"
+  },
+  {
+    "id": 61,
+    "group": "Jobs and housing",
+    "title": "Payroll onboarding data",
+    "label": "scam",
+    "lines": [
+      "Welcome aboard. To set up payroll, send me your Social Security number and bank details today."
+    ],
+    "categories": [
+      "Sensitive access",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 45,
+    "category_count": 2,
+    "expected": "No trigger"
+  },
+  {
+    "id": 62,
+    "group": "Other patterns",
+    "title": "Gold bars for safekeeping",
+    "label": "scam",
+    "lines": [
+      "This is the federal fraud unit. Hackers are targeting your accounts.",
+      "Convert your savings into gold bars, and an agent will collect them and keep them safe.",
+      "Tell no one, not even the bank, and do it today."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat",
+      "Payment",
+      "Secrecy"
+    ],
+    "flag_labels": [],
+    "points": 90,
+    "category_count": 4,
+    "expected": "Score path"
+  },
+  {
+    "id": 63,
+    "group": "Other patterns",
+    "title": "Friendly wrong-number opener",
+    "label": "scam",
+    "lines": [
+      "Hi Jamie? Sorry, I think I have the wrong number.",
+      "You sound really nice though, how is your day going?"
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "No trigger"
+  },
+  {
+    "id": 64,
+    "group": "Other patterns",
+    "title": "Callback-bait voicemail",
+    "label": "scam",
+    "lines": [
+      "This is Deputy Marsh. A case has been filed in your name.",
+      "Call 555-0100 immediately."
+    ],
+    "categories": [
+      "Authority + demand",
+      "Urgency or threat"
+    ],
+    "flag_labels": [],
+    "points": 35,
+    "category_count": 2,
+    "expected": "No trigger"
+  },
+  {
+    "id": 65,
+    "group": "Benign look-alikes",
+    "title": "Clinic confirms an appointment",
+    "label": "benign",
+    "lines": [
+      "Hi, this is the clinic confirming your appointment tomorrow at two.",
+      "Please call us back if you need to reschedule."
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "Stays quiet",
+    "note": "Basic quiet case."
+  },
+  {
+    "id": 66,
+    "group": "Benign look-alikes",
+    "title": "Doctor calling from a personal line",
+    "label": "benign",
+    "lines": [
+      "Hi, this is Dr. Patel. I am calling from my cell, so the number may look different.",
+      "I wanted to confirm your visit tomorrow. You can reach the office at its main line."
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "Stays quiet",
+    "note": "Caller ID mismatch alone must never raise an alert."
+  },
+  {
+    "id": 67,
+    "group": "Benign look-alikes",
+    "title": "Pharmacy order ready",
+    "label": "benign",
+    "lines": [
+      "Your prescription is ready for pickup.",
+      "The pharmacy is open until nine tonight."
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "Stays quiet",
+    "note": "Time pressure words without a demand."
+  },
+  {
+    "id": 68,
+    "group": "Benign look-alikes",
+    "title": "Business toll-free callback",
+    "label": "benign",
+    "lines": [
+      "This is about your recent order.",
+      "If you would like to talk, call our toll-free number on your receipt."
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "Stays quiet",
+    "note": "Legitimate callback number."
+  },
+  {
+    "id": 69,
+    "group": "Benign look-alikes",
+    "title": "Real bank alert, no code request",
+    "label": "benign",
+    "lines": [
+      "This is a courtesy alert from your bank about a recent charge.",
+      "We will never ask for a code. If it is not yours, call the number on the back of your card."
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "Stays quiet",
+    "note": "Mentions codes and card, but asks for nothing."
+  },
+  {
+    "id": 70,
+    "group": "Benign look-alikes",
+    "title": "Birthday gift cards",
+    "label": "benign",
+    "lines": [
+      "I bought gift cards for Grandma's birthday.",
+      "Which store does she like best?"
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "Stays quiet",
+    "note": "Gift cards, no payment demand."
+  },
+  {
+    "id": 71,
+    "group": "Benign look-alikes",
+    "title": "Recounting a past scam",
+    "label": "benign",
+    "lines": [
+      "Last week someone called pretending to be the IRS and asked for gift cards.",
+      "I hung up, but it was scary."
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "Stays quiet",
+    "note": "Quoted or past-tense scam discussion."
+  },
+  {
+    "id": 72,
+    "group": "Benign look-alikes",
+    "title": "Delivery code notification",
+    "label": "benign",
+    "lines": [
+      "Your driver will ask for the code in your confirmation text when the package arrives."
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "Stays quiet",
+    "note": "Code mentioned, not demanded by the caller."
+  },
+  {
+    "id": 73,
+    "group": "Benign look-alikes",
+    "title": "Water bill reminder",
+    "label": "benign",
+    "lines": [
+      "This is a reminder that your water bill is due Friday.",
+      "You can pay on our official website or by mail. No need to call."
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "Stays quiet",
+    "note": "Billing reminder pointing to an official portal."
+  },
+  {
+    "id": 74,
+    "group": "Benign look-alikes",
+    "title": "School closure robocall",
+    "label": "benign",
+    "lines": [
+      "This is the school district. Classes are closed tomorrow because of weather."
+    ],
+    "categories": [],
+    "flag_labels": [],
+    "points": 0,
+    "category_count": 0,
+    "expected": "Stays quiet",
+    "note": "Urgent-sounding but harmless notice."
+  }
+]
